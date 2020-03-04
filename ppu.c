@@ -411,6 +411,9 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 	unsigned char bit2[8][16];
 	unsigned char sprite[8][16];
 
+	unsigned char *bit1Ptr;
+	unsigned char *bit2Ptr;
+
 	disp_spr_back = attribs & 0x20;
 	flip_spr_hor = attribs & 0x40;
 	flip_spr_ver = attribs & 0x80;
@@ -436,40 +439,44 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 	if(!sprite_16) {
 		// 8 x 8 sprites
 		// fetch bits
+		bit1Ptr = (unsigned char*)bit1;
+		bit2Ptr = (unsigned char*)bit2;
 		if((!flip_spr_hor) && (!flip_spr_ver)) {
 			for(i = 7; i >= 0; i--) {
 				for(j = 0; j < 8; j++) {
-					bit1[7 - i] [j] = (ppu_memory[spr_start + j] >> i) & 1;
-					bit2[7 - i] [j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
+					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
 				}
 			}
 		} else if((flip_spr_hor) && (!flip_spr_ver)) {
 			for(i = 0; i < 8; i++) {
 				for(j = 0; j < 8; j++) {
-					bit1[i] [j] = (ppu_memory[spr_start + j] >> i) & 1;
-					bit2[i] [j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
+					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
 				}
 			}
 		} else if((!flip_spr_hor) && (flip_spr_ver)) {
 			for(i = 7; i >= 0; i--) {
 				for(j = 7; j >= 0; j--) {
-					bit1[7 - i] [7 - j] = (ppu_memory[spr_start + j] >> i) & 1;
-					bit2[7 - i] [7 - j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
+					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
 				}
 			}
 		} else if((flip_spr_hor) && (flip_spr_ver)) {
 			for(i = 0; i < 8; i++) {
 				for(j = 7; j >= 0; j--) {
-					bit1[i] [7 - j] = (ppu_memory[spr_start + j] >> i) & 1;
-					bit2[i] [7 - j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
+					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
 				}
 			}
 		}
 
 		// merge bits
+		bit1Ptr = (unsigned char*)bit1;
+		bit2Ptr = (unsigned char*)bit2;
 		for(i = 0; i < 8; i++) {
 			for(j = 0; j < 8; j++) {
-				sprite[i][j] = (bit2[i][j] << 1) | bit1[i][j];
+				sprite[i][j] = (*bit2Ptr++ << 1) | *bit1Ptr++;
 			}
 		}	
 
@@ -478,8 +485,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 			for(i = 7; i >= 0; i--) {
 				for(j = 0; j < 8; j++) {
 					if(sprite[7 - i] [j] != 0) {
-						if(sprite[7 - i] [j] != 0)
-							sprite[7 - i] [j] += ((attribs & 0x03) << 0x02);
+						sprite[7 - i] [j] += ((attribs & 0x03) << 0x02);
 					}
 				}
 			}
@@ -487,8 +493,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 			for(i = 0; i < 8; i++) {
 				for(j = 0; j < 8; j++) {
 					if(sprite[i] [j] != 0) {
-						if(sprite[i] [j] != 0)
-							sprite[i] [j] += ((attribs & 0x03) << 0x02);
+						sprite[i] [j] += ((attribs & 0x03) << 0x02);
 					}
 				}
 			}
@@ -496,8 +501,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 			for(i = 7; i >= 0; i--) {
 				for(j = 7; j >= 0; j--) {
 					if(sprite[7 - i] [7 - j] != 0) {
-						if(sprite[7 - i] [7 - j] != 0)
-							sprite[7 - i] [7 - j] += ((attribs & 0x03) << 0x02);
+						sprite[7 - i] [7 - j] += ((attribs & 0x03) << 0x02);
 					}
 				}
 			}
@@ -505,8 +509,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 			for(i = 0; i < 8; i++) {
 				for(j = 7; j >= 0; j--) {
 					if(sprite[i] [7 - j] != 0) {
-						if(sprite[i] [7 - j] != 0)
-							sprite[i] [7 - j] += ((attribs & 0x03) << 0x02);
+						sprite[i] [7 - j] += ((attribs & 0x03) << 0x02);
 					}
 				}
 			}
@@ -538,40 +541,44 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 	} else {
 		// 8 x 16 sprites
 		// fetch bits
+		bit1Ptr = (unsigned char*)bit1;
+		bit2Ptr = (unsigned char*)bit2;
 		if((!flip_spr_hor) && (!flip_spr_ver)) {
 			for(i = 7; i >= 0; i--) {
 				for(j = 0; j < 16; j++) {
-					bit1[7 - i] [j] = (ppu_memory[spr_start + j] >> i) & 1;
-					bit2[7 - i] [j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
+					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
 				}
 			}
 		} else if((flip_spr_hor) && (!flip_spr_ver)) {
 			for(i = 0; i < 8; i++) {
 				for(j = 0; j < 16; j++) {
-					bit1[i] [j] = (ppu_memory[spr_start + j] >> i) & 1;
-					bit2[i] [j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
+					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
 				}
 			}
 		} else if((!flip_spr_hor) && (flip_spr_ver)) {
 			for(i = 7; i >= 0; i--) {
 				for(j = 15; j >= 0; j--) {
-					bit1[7 - i] [15 - j] = (ppu_memory[spr_start + j] >> i) & 1;
-					bit2[7 - i] [15 - j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
+					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
 				}
 			}
 		} else if((flip_spr_hor) && (flip_spr_ver)) {
 			for(i = 0; i < 8; i++) {
 				for(j = 15; j >= 0; j--) {
-					bit1[i] [15 - j] = (ppu_memory[spr_start + j] >> i) & 1;
-					bit2[i] [15 - j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
+					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
 				}
 			}
 		}
 
 		// merge bits
+		bit1Ptr = (unsigned char*)bit1;
+		bit2Ptr = (unsigned char*)bit2;
 		for(i = 0; i < 8; i++) {
 			for(j = 0; j < 16; j++) {
-				sprite[i][j] = (bit2[i][j] << 1) | bit1[i][j];
+				sprite[i][j] = (*bit2Ptr++ << 1) | *bit1Ptr++;
 			}
 		}	
 
@@ -580,8 +587,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 			for(i = 7; i >= 0; i--) {
 				for(j = 0; j < 16; j++) {
 					if(sprite[7 - i] [j] != 0) {
-						if(sprite[7 - i] [j] != 0)
-							sprite[7 - i] [j] += ((attribs & 0x03) << 0x02);
+						sprite[7 - i] [j] += ((attribs & 0x03) << 0x02);
 					}
 				}
 			}
@@ -589,8 +595,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 			for(i = 0; i < 8; i++) {
 				for(j = 0; j < 16; j++) {
 					if(sprite[i] [j] != 0) {
-						if(sprite[i] [j] != 0)
-							sprite[i] [j] += ((attribs & 0x03) << 0x02);
+						sprite[i] [j] += ((attribs & 0x03) << 0x02);
 					}
 				}
 			}
@@ -598,8 +603,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 			for(i = 7; i >= 0; i--) {
 				for(j = 15; j >= 0; j--) {
 					if(sprite[7 - i] [15 - j] != 0) {
-						if(sprite[7 - i] [15 - j] != 0)
-							sprite[7 - i] [15 - j] += ((attribs & 0x03) << 0x02);
+						sprite[7 - i] [15 - j] += ((attribs & 0x03) << 0x02);
 					}
 				}
 			}
@@ -607,8 +611,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 			for(i = 0; i < 8; i++) {
 				for(j = 15; j >= 0; j--) {
 					if(sprite[i] [15 - j] != 0) {
-						if(sprite[i] [15 - j] != 0)
-							sprite[i] [15 - j] += ((attribs & 0x03) << 0x02);
+						sprite[i] [15 - j] += ((attribs & 0x03) << 0x02);
 					}
 				}
 			}
