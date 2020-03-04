@@ -29,13 +29,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef PC
 
 #include <filestreamfunctions.h>
-
-#endif
-
- /*#include <types.h>*/
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -43,6 +38,7 @@
 #include "lame6502/lame6502.h"
 
 #include "lamenes.h"
+#include "memory.h"
 #include "romloader.h"
 
 /* pointers to the nes headers */
@@ -66,25 +62,6 @@ int analyze_header(char *romfn)
 {
 	int i;
 
-#ifdef PC
-
-	FILE *romfp;
-
-	/*
-	* nes header is 15 bytes
-	* nes internal memory (6502 = 65536 bytes (64K))
-	*/
-	header = (unsigned char *)malloc(15);
-
-	romfp = fopen(romfn, "rb");
-	if (!romfp)
-	{
-		free(header);
-		return(1);
-	}
-
-#else
-
 	Stream *romfp;
 
 	/*
@@ -99,22 +76,6 @@ int analyze_header(char *romfn)
 		return(1);
 	}
 
-#endif
-
-#ifdef PC
-
-	fseek(romfp, 0, 2);
-	romlen = ftell(romfp);
-
-	fseek(romfp, 0, SEEK_SET);
-
-	/* read the first 15 bytes of the rom */
-	fread(&header[0], 1, 15, romfp);
-
-	fclose(romfp);
-
-#else
-
 	romlen = SeekDiskStream(romfp, 0, 3);
 
 	SeekDiskStream(romfp, 0, 1);
@@ -123,7 +84,6 @@ int analyze_header(char *romfn)
 
 	CloseDiskStream(romfp);
 
-#endif
 
 	/* ines rom header must be: "NES\n" (HEX: 4E 45 53 1A), else exit */
 	if ((header[0] != 'N') || (header[1] != 'E') || (header[2] != 'S') || (header[3] != 0x1A))
@@ -286,22 +246,6 @@ int analyze_header(char *romfn)
 
 int load_rom(char *romfn)
 {
-#ifdef PC
-
-	FILE *romfp;
-
-	romfp = fopen(romfn, "rb");
-
-	if (!romfp)
-	{
-		return(1);
-	}
-
-	fread(&romcache[0x0000], 1, romlen, romfp);
-	fclose(romfp);
-
-#else
-
 	Stream *romfp;
 
 	romfp = OpenDiskStream(romfn, 0);
@@ -314,7 +258,6 @@ int load_rom(char *romfn)
 
 	CloseDiskStream(romfp);
 
-#endif
 
 	/* load prg data in memory */
 	if (PRG == 0x01)

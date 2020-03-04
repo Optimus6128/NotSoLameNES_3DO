@@ -29,6 +29,9 @@
  * SUCH DAMAGE.
  */
 
+#ifndef LAMENES_ROMLOADER_H
+#define LAMENES_ROMLOADER_H
+
 extern unsigned char PRG;
 extern unsigned char CHR;
 
@@ -43,3 +46,5 @@ extern int VRAM;
 
 extern int analyze_header(char *romfn);
 extern int load_rom(char *romfn);
+
+#endif

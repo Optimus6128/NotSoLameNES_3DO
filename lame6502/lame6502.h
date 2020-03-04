@@ -33,8 +33,6 @@
  * lame6502.h - 6502 cpu functions and registers
  */
 
-extern unsigned char *memory;
-
 extern unsigned int program_counter;
 
 extern unsigned char stack_pointer;

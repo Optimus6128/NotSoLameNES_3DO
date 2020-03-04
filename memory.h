@@ -29,39 +29,14 @@
  * SUCH DAMAGE.
  */
 
-#ifndef LAMENES_H
-#define LAMENES_H
+#ifndef LAMENES_MEMORY_H
+#define LAMENES_MEMORY_H
 
-#include <graphics.h>
-
-enum {SYSTEM_NTSC, SYSTEM_PAL};
-
-extern char romfn[256];
-
-extern unsigned char *romcache;
-
+extern unsigned char *memory;
 extern unsigned char *ppu_memory;
 extern unsigned char *sprite_memory;
 
-extern int systemType;
-extern CCB *screenCel;
-
-extern unsigned char CPU_is_running;
-extern unsigned char pause_emulation;
-
-extern unsigned short width;
-extern unsigned short height;
-
-extern void load_state();
-extern void save_state();
-
-extern long romlen;
-
 extern unsigned char memory_read(unsigned int address);
 extern void write_memory(unsigned int address,unsigned char data);
-
-extern void set_input();
-extern void reset_emulation();
-extern void quit_emulation();
 
 #endif

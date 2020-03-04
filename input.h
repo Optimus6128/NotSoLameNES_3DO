@@ -29,6 +29,9 @@
  * SUCH DAMAGE.
  */
 
+#ifndef LAMENES_INPUT_H
+#define LAMENES_INPUT_H
+
 extern void set_input(char *pad_key);
 extern void clear_input(char *pad_key);
 extern void reset_input();
@@ -41,3 +44,5 @@ extern int pad1_START;
 extern int pad1_SELECT;
 extern int pad1_A;
 extern int pad1_B;
+
+#endif

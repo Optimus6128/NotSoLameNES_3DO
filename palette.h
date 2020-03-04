@@ -29,6 +29,9 @@
  * SUCH DAMAGE.
  */
 
+#ifndef LAMENES_PALETTE_H
+#define LAMENES_PALETTE_H
+
 typedef struct _pal {
 	int r;
 	int g;
@@ -55,3 +58,5 @@ palet palette[64] = {
 };
 
 uint16 palette3DO[64];
+
+#endif

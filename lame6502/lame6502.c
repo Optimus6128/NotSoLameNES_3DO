@@ -47,13 +47,10 @@
 
 #include "instructions.h"
 #include "disas.h"
+#include "memory.h"
 
 #include "../lamenes.h"
 
-/*
- * system ram
- */
-unsigned char *memory;
 
 /*
  * 6502 internal registers

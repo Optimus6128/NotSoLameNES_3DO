@@ -46,6 +46,7 @@
 #include "macros.h"
 #include "romloader.h"
 #include "palette.h"
+#include "memory.h"
 
 // gfx cache -> [hor] [ver]
 unsigned char bgcache[256+8] [256+8];

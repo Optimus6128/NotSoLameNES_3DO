@@ -40,6 +40,9 @@
  * &0x01 = D0
  */
 
+#ifndef LAMENES_MACROS_H
+#define LAMENES_MACROS_H
+
 /* memory[0x2000] */
 #define exec_nmi_on_vblank	(ppu_control1 & 0x80) /* 1 = Generate VBlank NMI */
 #define sprite_16		(ppu_control1 & 0x20) /* 1 = Sprites 8x16/8x8 */
@@ -59,3 +62,5 @@
 #define sprite_zero		(ppu_status & 0x40) /* 1 = PPU has hit Sprite #0 */
 #define scanline_sprite_count	(ppu_status & 0x20) /* 1 = More than 8 sprites on current scanline */
 #define vram_write_flag		(ppu_status & 0x10) /* 1 = Writes to VRAM are ignored */
+
+#endif
