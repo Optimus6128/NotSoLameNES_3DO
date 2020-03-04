@@ -407,12 +407,12 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 	int spr_start;
 	int sprite_pattern_table;
 	
-	unsigned char bit1[8][16];
-	unsigned char bit2[8][16];
-	unsigned char sprite[8][16];
+	unsigned char sprite[8*16];
 
-	unsigned char *bit1Ptr;
-	unsigned char *bit2Ptr;
+	unsigned char *spritePtr;
+	const int attribsAdd = (attribs & 0x03) << 0x02;
+	
+	if (!sprite_on) return;
 
 	disp_spr_back = attribs & 0x20;
 	flip_spr_hor = attribs & 0x40;
@@ -437,102 +437,60 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 	}
 
 	if(!sprite_16) {
+
 		// 8 x 8 sprites
 		// fetch bits
-		bit1Ptr = (unsigned char*)bit1;
-		bit2Ptr = (unsigned char*)bit2;
+		spritePtr = (unsigned char*)sprite;
 		if((!flip_spr_hor) && (!flip_spr_ver)) {
 			for(i = 7; i >= 0; i--) {
 				for(j = 0; j < 8; j++) {
-					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
-					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
+					if (spriteVal!=0) spriteVal += attribsAdd;
+					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((flip_spr_hor) && (!flip_spr_ver)) {
 			for(i = 0; i < 8; i++) {
 				for(j = 0; j < 8; j++) {
-					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
-					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
+					if (spriteVal!=0) spriteVal += attribsAdd;
+					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((!flip_spr_hor) && (flip_spr_ver)) {
 			for(i = 7; i >= 0; i--) {
 				for(j = 7; j >= 0; j--) {
-					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
-					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
+					if (spriteVal!=0) spriteVal += attribsAdd;
+					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((flip_spr_hor) && (flip_spr_ver)) {
 			for(i = 0; i < 8; i++) {
 				for(j = 7; j >= 0; j--) {
-					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
-					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
+					if (spriteVal!=0) spriteVal += attribsAdd;
+					*spritePtr++ = spriteVal;
 				}
 			}
 		}
 
-		// merge bits
-		bit1Ptr = (unsigned char*)bit1;
-		bit2Ptr = (unsigned char*)bit2;
-		for(i = 0; i < 8; i++) {
-			for(j = 0; j < 8; j++) {
-				sprite[i][j] = (*bit2Ptr++ << 1) | *bit1Ptr++;
-			}
-		}	
-
-		// add sprite attribute colors
-		if((!flip_spr_hor) && (!flip_spr_ver)) {
-			for(i = 7; i >= 0; i--) {
-				for(j = 0; j < 8; j++) {
-					if(sprite[7 - i] [j] != 0) {
-						sprite[7 - i] [j] += ((attribs & 0x03) << 0x02);
-					}
-				}
-			}
-		} else if((flip_spr_hor) && (!flip_spr_ver)) {
-			for(i = 0; i < 8; i++) {
-				for(j = 0; j < 8; j++) {
-					if(sprite[i] [j] != 0) {
-						sprite[i] [j] += ((attribs & 0x03) << 0x02);
-					}
-				}
-			}
-		} else if((!flip_spr_hor) && (flip_spr_ver)) {
-			for(i = 7; i >= 0; i--) {
-				for(j = 7; j >= 0; j--) {
-					if(sprite[7 - i] [7 - j] != 0) {
-						sprite[7 - i] [7 - j] += ((attribs & 0x03) << 0x02);
-					}
-				}
-			}
-		} else if((flip_spr_hor) && (flip_spr_ver)) {
-			for(i = 0; i < 8; i++) {
-				for(j = 7; j >= 0; j--) {
-					if(sprite[i] [7 - j] != 0) {
-						sprite[i] [7 - j] += ((attribs & 0x03) << 0x02);
-					}
-				}
-			}
-		}
-
+		spritePtr = (unsigned char*)sprite;
 		for(i = 0; i < 8; i++) {
 			for(j = 0; j < 8; j++) {
 				// cache pixel for sprite zero detection
+				const unsigned char value = *spritePtr++;
 				if(spr_nr == 0)
-					sprcache[y + j][x + i] = sprite[i] [j];
+					sprcache[y + j][x + i] = value;
 
-				if(sprite[i] [j] != 0) {
+				if(value != 0) {
 					// sprite priority check
 					if(!disp_spr_back) {
-						if(sprite_on) {
-							draw_pixel(x + i, y + j, ppu_memory[0x3f10 + (sprite[i] [j])]);
-						}
+						draw_pixel(x + i, y + j, ppu_memory[0x3f10 + value]);
 					} else {
-						if(sprite_on) {
-							// draw the sprite pixel if the background pixel is transparent (0)
-							if(bgcache[y+j] [x+i] == 0) {
-								draw_pixel(x + i, y + j, ppu_memory[0x3f10 + (sprite[i] [j])]);
-							}
+						// draw the sprite pixel if the background pixel is transparent (0)
+						if(bgcache[y+j] [x+i] == 0) {
+							draw_pixel(x + i, y + j, ppu_memory[0x3f10 + value]);
 						}
 					}
 				}
@@ -541,100 +499,57 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 	} else {
 		// 8 x 16 sprites
 		// fetch bits
-		bit1Ptr = (unsigned char*)bit1;
-		bit2Ptr = (unsigned char*)bit2;
+		spritePtr = (unsigned char*)sprite;
 		if((!flip_spr_hor) && (!flip_spr_ver)) {
 			for(i = 7; i >= 0; i--) {
 				for(j = 0; j < 16; j++) {
-					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
-					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					int spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
+					if (spriteVal!=0) spriteVal += attribsAdd;
+					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((flip_spr_hor) && (!flip_spr_ver)) {
 			for(i = 0; i < 8; i++) {
 				for(j = 0; j < 16; j++) {
-					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
-					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					int spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
+					if (spriteVal!=0) spriteVal += attribsAdd;
+					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((!flip_spr_hor) && (flip_spr_ver)) {
 			for(i = 7; i >= 0; i--) {
 				for(j = 15; j >= 0; j--) {
-					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
-					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					int spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
+					if (spriteVal!=0) spriteVal += attribsAdd;
+					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((flip_spr_hor) && (flip_spr_ver)) {
 			for(i = 0; i < 8; i++) {
 				for(j = 15; j >= 0; j--) {
-					*bit1Ptr++ = (ppu_memory[spr_start + j] >> i) & 1;
-					*bit2Ptr++ = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					int spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
+					if (spriteVal!=0) spriteVal += attribsAdd;
+					*spritePtr++ = spriteVal;
 				}
 			}
 		}
 
-		// merge bits
-		bit1Ptr = (unsigned char*)bit1;
-		bit2Ptr = (unsigned char*)bit2;
-		for(i = 0; i < 8; i++) {
-			for(j = 0; j < 16; j++) {
-				sprite[i][j] = (*bit2Ptr++ << 1) | *bit1Ptr++;
-			}
-		}	
-
-		// add sprite attribute colors
-		if((!flip_spr_hor) && (!flip_spr_ver)) {
-			for(i = 7; i >= 0; i--) {
-				for(j = 0; j < 16; j++) {
-					if(sprite[7 - i] [j] != 0) {
-						sprite[7 - i] [j] += ((attribs & 0x03) << 0x02);
-					}
-				}
-			}
-		} else if((flip_spr_hor) && (!flip_spr_ver)) {
-			for(i = 0; i < 8; i++) {
-				for(j = 0; j < 16; j++) {
-					if(sprite[i] [j] != 0) {
-						sprite[i] [j] += ((attribs & 0x03) << 0x02);
-					}
-				}
-			}
-		} else if((!flip_spr_hor) && (flip_spr_ver)) {
-			for(i = 7; i >= 0; i--) {
-				for(j = 15; j >= 0; j--) {
-					if(sprite[7 - i] [15 - j] != 0) {
-						sprite[7 - i] [15 - j] += ((attribs & 0x03) << 0x02);
-					}
-				}
-			}
-		} else if((flip_spr_hor) && (flip_spr_ver)) {
-			for(i = 0; i < 8; i++) {
-				for(j = 15; j >= 0; j--) {
-					if(sprite[i] [15 - j] != 0) {
-						sprite[i] [15 - j] += ((attribs & 0x03) << 0x02);
-					}
-				}
-			}
-		}
-
+		spritePtr = (unsigned char*)sprite;
 		for(i = 0; i < 8; i++) {
 			for(j = 0; j < 16; j++) {
 				// cache pixel for sprite zero detection
+				const unsigned char value = *spritePtr++;
 				if(spr_nr == 0)
-					sprcache[y + j][x + i] = sprite[i] [j];
+					sprcache[y + j][x + i] = value;
 
-				if(sprite[i] [j] != 0) {
+				if(value != 0) {
 					// sprite priority check
 					if(!disp_spr_back) {
-						if(sprite_on) {
-							draw_pixel(x + i, y + j, ppu_memory[0x3f10 + (sprite[i] [j])]);
-						}
+						draw_pixel(x + i, y + j, ppu_memory[0x3f10 + value]);
 					} else {
 						// draw the sprite pixel if the background pixel is transparent (0)
 						if(bgcache[y+j] [x+i] == 0) {
-							if(sprite_on) {
-								draw_pixel(x + i, y + j, ppu_memory[0x3f10 + (sprite[i] [j])]);
-							}
+							draw_pixel(x + i, y + j, ppu_memory[0x3f10 + value]);
 						}
 					}
 				}
