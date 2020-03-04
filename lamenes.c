@@ -32,7 +32,6 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
-/*#include <types.h>*/
 
 #include "lame6502/lame6502.h"
 #include "lame6502/debugger.h"
@@ -44,30 +43,25 @@
 #include "ppu.h"
 #include "palette.h"
 #include "input.h"
-#include "sdl_functions.h"
 
 #include "lib/str_chrchk.h"
 #include "lib/str_replace.h"
 
-/* included mappers */
-#include "mappers/mmc1.h"	/* 1 */
-#include "mappers/unrom.h"	/* 2 */
-#include "mappers/cnrom.h"	/* 3 */
-#include "mappers/mmc3.h"	/* 4 */
+// included mappers
+#include "mappers/mmc1.h"	// 1
+#include "mappers/unrom.h"	// 2
+#include "mappers/cnrom.h"	// 3
+#include "mappers/mmc3.h"	// 4
 
-#ifdef PC
-	#include <SDL.h>
-#else
-	#include "3DO/GestionAffichage.h"
-	#include "3DO/GestionSprites.h"
-	#include "3DO/GestionTextes.h"
-	#include <graphics.h>
-#endif
+#include "3DO/GestionAffichage.h"
+#include "3DO/GestionSprites.h"
+#include "3DO/GestionTextes.h"
+#include <graphics.h>
 
 
 char romfn[256];
 
-/* cache the rom in memory to access the data quickly */
+// cache the rom in memory to access the data quickly
 unsigned char *romcache;
 
 unsigned char *ppu_memory;
@@ -89,28 +83,16 @@ unsigned char pause_emulation = 0;
 unsigned short height;
 unsigned short width;
 
-unsigned short sdl_screen_height;
-unsigned short sdl_screen_width;
-
-unsigned char enable_background = 1;
-unsigned char enable_sprites = 1;
-
-unsigned char fullscreen = 0;
-unsigned char scale = 1;
-
-unsigned char frameskip = 0;
-unsigned char skipframe = 0;
 
 CCB *screenCel;
 
-/*int sdl_delay = 0;*/
 
 char *savfile;
 char *statefile;
 
 long romlen;
 
-/*FILE *sav_fp;*/
+// FILE *sav_fp;
 
 void open_sav()
 {
@@ -127,7 +109,8 @@ void open_sav()
 }
 
 void write_sav()
-{/*
+{
+/*	
 	sav_fp = fopen(savfile,"wb");
 	fwrite(&memory[0x6000],1,8192,sav_fp);
 	fclose(sav_fp);*/
@@ -292,33 +275,31 @@ save_state()
 	fprintf(stdout,"[*] done!\n");*/
 }
 
-/*
- * memory read handler
- */
+// memory read handler
 unsigned char memory_read(unsigned int address) {
-	/* this is ram or rom so we can return the address */
+	// this is ram or rom so we can return the address
 	if(address < 0x2000 || address > 0x7FFF)
 		return memory[address];
 
-	/* the addresses between 0x2000 and 0x5000 are for input/ouput */
+	// the addresses between 0x2000 and 0x5000 are for input/ouput
 	if(address == 0x2002) {
 		ppu_status_tmp = ppu_status;
 
-		/* set ppu_status (D7) to 0 (vblank_on) */
+		// set ppu_status (D7) to 0 (vblank_on)
 		ppu_status &= 0x7F;
 		write_memory(0x2002,ppu_status);
 
-		/* set ppu_status (D6) to 0 (sprite_zero) */
+		// set ppu_status (D6) to 0 (sprite_zero)
 		ppu_status &= 0x1F;
 		write_memory(0x2002,ppu_status);
 
-		/* reset VRAM Address Register #1 */
+		// reset VRAM Address Register #1
 		ppu_bgscr_f = 0x00;
 
-		/* reset VRAM Address Register #2 */
+		// reset VRAM Address Register #2
 		ppu_addr_h = 0x00;
 
-		/* return bits 7-4 of unmodifyed ppu_status with bits 3-0 of the ppu_addr_tmp */
+		// return bits 7-4 of unmodifyed ppu_status with bits 3-0 of the ppu_addr_tmp
 		return (ppu_status_tmp & 0xE0) | (ppu_addr_tmp & 0x1F);
 	}
 
@@ -335,14 +316,14 @@ unsigned char memory_read(unsigned int address) {
 		return ppu_memory[tmp];
 	}
 
-	/* pAPU data (sound) */
+	// pAPU data (sound)
 	/*
 	if(address == 0x4015) {
 		return memory[address];
 	}
 	*/
 	
-	/* joypad1 data */
+	// joypad1 data
 	if(address == 0x4016) {
 		switch(pad1_readcount) {
 			case 0:
@@ -385,56 +366,51 @@ unsigned char memory_read(unsigned int address) {
 			pad1_readcount = 0;
 			break;
 		}
-
-		return memory[address];
 	}
 
-	if(address == 0x4017) {
+	/*if(address == 0x4017) {
 		return memory[address];
-	}
+	}*/
 
 	return memory[address];
 }
 
-/*
- * memory write handler
- */
-void
-write_memory(unsigned int address,unsigned char data)
+// memory write handler
+void write_memory(unsigned int address,unsigned char data)
 {
 
-	/* PPU Status */
+	// PPU Status
 	if(address == 0x2002) {
 		memory[address] = data;
 		return;
 	}
 
-	/* PPU Video Memory area */
+	// PPU Video Memory area
 	if(address > 0x1fff && address < 0x4000) {
 		write_ppu_memory(address,data);
 		return;
 	}
 
-	/* Sprite DMA Register */
+	// Sprite DMA Register
 	if(address == 0x4014) {
 		write_ppu_memory(address,data);
 		return;
 	}
 
-	/* Joypad 1 */
+	// Joypad 1
 	if(address == 0x4016) {
 		memory[address] = 0x40;
 
 		return;
 	}
 
-	/* Joypad 2 */
+	// Joypad 2
 	/*if(address == 0x4017) {
 		memory[address] = 0x48;
 		return;
 	}*/
 
-	/* pAPU Sound Registers */
+	// pAPU Sound Registers
 	/*
 	if(address > 0x3fff && address < 0x4016) {
 		write_sound(address,data); not emulated yet!
@@ -442,7 +418,8 @@ write_memory(unsigned int address,unsigned char data)
 		return;
 	}
 	*/
-	/* SRAM Registers */
+
+	// SRAM Registers
 	/*
 	if(address > 0x5fff && address < 0x8000) {
 		if(SRAM == 1)
@@ -452,14 +429,19 @@ write_memory(unsigned int address,unsigned char data)
 		return;
 	}
 	*/
-	/* RAM registers */
-	if(address < 0x2000) {
+
+	// RAM registers
+	if(address < 0x2000) {	// Should be 0x800 instead of 0x2000? Did it mean 2000 in DEC? (or specifically 2048)
+							// (Why this has to mirror four times? Is it necessary? Need to read more about NES hardware)
 		memory[address] = data;
-		memory[address+2048] = data; /* mirror of 0-800 */
-		memory[address+4096] = data; /* mirror of 0-800 */
-		memory[address+6144] = data; /* mirror of 0-800 */
+		memory[address+2048] = data; // mirror of 0-0x800
+		memory[address+4096] = data; // mirror of 0-0x800
+		memory[address+6144] = data; // mirror of 0-0x800
 		return;
 	}
+
+	// Disable the mappers for now to optimize thing for the single ROM I am trying
+	// I will handle this whole memory_write/read calls in a more optimized way in the future anyway
 /*
 	if(MAPPER == 1) {
 		mmc1_access(address,data);
@@ -484,17 +466,6 @@ write_memory(unsigned int address,unsigned char data)
 	memory[address] = data;
 }
 
-void
-show_header()
-{
-	/*fprintf(stdout,"\n"
-	"************************************************************\n"
-	"*** LameNES version 0.1 by Joey Loman <joey@lamenes.org> ***\n"
-	"************************************************************\n"
-	"\n"
-	);*/
-}
-
 void start_emulation()
 {
 	unsigned short counter = 0;
@@ -504,11 +475,11 @@ void start_emulation()
 	while(CPU_is_running) {
 		CPU_execute(start_int);
 
-		/* set ppu_status D7 to 1 and enter vblank */
+		// set ppu_status D7 to 1 and enter vblank
 		ppu_status |= 0x80;
 		write_memory(0x2002,ppu_status);
 
-		counter += CPU_execute(12); /* needed for some roms */
+		counter += CPU_execute(12); // needed for some roms
 
 		if(exec_nmi_on_vblank) {
 			counter += NMI(counter);
@@ -516,18 +487,14 @@ void start_emulation()
 
 		counter += CPU_execute(vblank_cycle_timeout);
 
-		/* vblank ends (ppu_status D7) is set to 0, sprite_zero (ppu_status D6) is set to 0 */
+		// vblank ends (ppu_status D7) is set to 0, sprite_zero (ppu_status D6) is set to 0
 		ppu_status &= 0x3F;
 	
-		/* and write to mem */
+		// and write to mem
 		write_memory(0x2002,ppu_status);
 
 		loopyV = loopyT;
 
-		if(skipframe > frameskip)
-			skipframe = 0;
-
-		screen_lock();
 		for(scanline = 0; scanline < height; scanline++) {
 			if(!sprite_zero) {
 				check_sprite_hit(scanline);
@@ -541,25 +508,14 @@ void start_emulation()
 				if(scanline == mmc3_irq_counter) {
 					IRQ(counter);
 					mmc3_irq_counter--;
-
-					/*break;*/
 				}
 			}
 		}
 
 		render_sprites();
-		screen_unlock();
 
-		if(skipframe == 0) {
-			#ifdef PC
-				SDL_Flip(screen);
-			#else
-				drawNESscreenCEL();
-				affichageMiseAJour();
-			#endif
-		}
-
-		skipframe++;
+		drawNESscreenCEL();
+		affichageMiseAJour();
 
 		/*
 		if(!interrupt_flag) 
@@ -567,15 +523,11 @@ void start_emulation()
 			counter += IRQ(counter);
 		}
 		*/
-
-		check_SDL_event();
 	}
 }
 
 void reset_emulation()
 {
-	/*printf("[*] resetting emulation...\n");*/
-
 	if(load_rom(romfn) == 1) {
 		free(sprite_memory);
 		free(ppu_memory);
@@ -596,13 +548,11 @@ void reset_emulation()
 
 void quit_emulation()
 {
-	/* free all memory */
+	// free all memory
 	free(sprite_memory);
 	free(ppu_memory);
 	free(memory);
 	free(romcache);
-
-	/*printf("[!] quiting LameNES!\n\n");*/
 
 	exit(0);
 }
@@ -634,42 +584,41 @@ static void initNESpal3DO()
 
 int main(void)
 {
-	/* cpu speed */
+	// cpu speed
 	unsigned int NTSC_SPEED = 1789725;
 	unsigned int PAL_SPEED = 1773447;
 
-	/* screen width */
+	// screen width
 	#define SCREEN_WIDTH 256
 	
-	/* screen height */
+	// screen height
 	#define NTSC_HEIGHT 224
 	#define PAL_HEIGHT 240
 
-	/* screen total height */
+	// screen total height
 	#define NTSC_TOTAL_HEIGHT 261
 	#define PAL_TOTAL_HEIGHT 313
 
-	/* vblank int */
+	// vblank int
 	unsigned short NTSC_VBLANK_INT = NTSC_SPEED / 60;
 	unsigned short PAL_VBLANK_INT = PAL_SPEED / 50;
 
-	/* scanline refresh (hblank)*/
+	// scanline refresh (hblank)
 	unsigned short NTSC_SCANLINE_REFRESH = NTSC_VBLANK_INT / NTSC_TOTAL_HEIGHT;
 	unsigned short PAL_SCANLINE_REFRESH = PAL_VBLANK_INT / PAL_TOTAL_HEIGHT;
 
-	/* vblank int cycle timeout */
+	// vblank int cycle timeout
 	unsigned int NTSC_VBLANK_CYCLE_TIMEOUT = (NTSC_TOTAL_HEIGHT-NTSC_HEIGHT) * NTSC_VBLANK_INT / NTSC_TOTAL_HEIGHT;
 	unsigned int PAL_VBLANK_CYCLE_TIMEOUT = (PAL_TOTAL_HEIGHT-PAL_HEIGHT) * PAL_VBLANK_INT / PAL_TOTAL_HEIGHT;
 
-	show_header();
 
-	/* 64k main memory */
+	// 64k main memory
 	memory = (unsigned char *)malloc(65536);
 
-	/* 16k video memory */
+	// 16k video memory
 	ppu_memory = (unsigned char *)malloc(16384);
 
-	/* 256b sprite memory */
+	// 256b sprite memory
 	sprite_memory = (unsigned char *)malloc(256);
 
 	if(analyze_header("rom.nes") == 1)
@@ -680,14 +629,8 @@ int main(void)
 		exit(1);
 	}
 
-	/* rom cache memory */
+	// rom cache memory
 	romcache = (unsigned char *)malloc(romlen);
-
-	/*printf("[*] PRG = %x, CHR = %x, OS_MIRROR = %d, FS_MIRROR = %d, TRAINER = %d"
-		", SRAM = %d, MIRRORING = %d\n",
-		PRG,CHR,OS_MIRROR, FS_MIRROR,TRAINER,SRAM,MIRRORING);
-
-	printf("[*] mapper: %d found!\n",MAPPER);*/
 
 	if (load_rom("rom.nes") == 1)
 	{
@@ -729,23 +672,10 @@ int main(void)
 	initNESpal3DO();
 
 
-	sdl_screen_height = height * scale;
-	sdl_screen_width = width * scale;
-
-	if(systemType == SYSTEM_PAL) {
-		init_SDL(0,fullscreen);
-	} else if(systemType == SYSTEM_NTSC) {
-		init_SDL(1,fullscreen);
-	}
-
-	/*
-	 * first reset the cpu at poweron
-	 */
+	// first reset the cpu at poweron
 	CPU_reset();
 
-	/*
-	 * reset joystick
-	 */
+	// reset joystick
 	reset_input();
 
 
@@ -767,10 +697,7 @@ int main(void)
 		{
 			start_emulation();
 		}
-
-		check_SDL_event();
 	}
 
-	/* never reached */
 	return(0);
 }

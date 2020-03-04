@@ -29,9 +29,8 @@
  * SUCH DAMAGE.
  */
  
-#ifndef PC
-	#include <graphics.h>
-#endif
+
+#include <graphics.h>
 
 enum {SYSTEM_NTSC, SYSTEM_PAL};
 
@@ -54,9 +53,6 @@ extern unsigned char skipframe;
 
 extern unsigned short height;
 extern unsigned short width;
-
-extern unsigned short sdl_screen_height;
-extern unsigned short sdl_screen_width;
 
 extern void load_state();
 extern void save_state();
