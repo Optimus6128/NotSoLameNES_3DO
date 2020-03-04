@@ -49,16 +49,11 @@ extern CCB *screenCel;
 extern unsigned char CPU_is_running;
 extern unsigned char pause_emulation;
 
-extern unsigned char skipframe;
-
-extern unsigned short height;
 extern unsigned short width;
+extern unsigned short height;
 
 extern void load_state();
 extern void save_state();
-
-extern unsigned char enable_background;
-extern unsigned char enable_sprites;
 
 extern long romlen;
 

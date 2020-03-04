@@ -80,8 +80,8 @@ int systemType;
 unsigned char CPU_is_running = 1;
 unsigned char pause_emulation = 0;
 
-unsigned short height;
 unsigned short width;
+unsigned short height;
 
 
 CCB *screenCel;
@@ -466,6 +466,50 @@ void write_memory(unsigned int address,unsigned char data)
 	memory[address] = data;
 }
 
+void check_button_events()
+{
+	uint32	gButtons;
+	unsigned char i;
+
+	DoControlPad(1, &gButtons, (ControlUp | ControlDown | ControlLeft | ControlRight));
+
+	for (i=0;i<9;i++)
+		clear_input((char *) i);
+
+	if (gButtons & ControlDown) {
+		set_input((char *) 1);
+	}
+
+	if (gButtons & ControlUp) {
+		set_input((char *) 2);
+	}
+
+	if (gButtons & ControlLeft) {
+		set_input((char *) 3);
+	}
+
+	if (gButtons & ControlRight) {
+		set_input((char *) 4);
+	}
+
+	if (gButtons & ControlStart) {
+		set_input((char *) 5);
+	}
+
+	//	Select
+	if (gButtons & ControlC) {
+		set_input((char *) 6);
+	}
+
+	if (gButtons & ControlA) {
+		set_input((char *) 7);
+	}
+
+	if (gButtons & ControlB) {
+		set_input((char *) 8);
+	}
+}
+
 void start_emulation()
 {
 	unsigned short counter = 0;
@@ -523,6 +567,8 @@ void start_emulation()
 			counter += IRQ(counter);
 		}
 		*/
+		
+		check_button_events();
 	}
 }
 
@@ -659,14 +705,17 @@ int main(void)
 	}
 */
 
+	width = 256;
 	if(systemType == SYSTEM_PAL) {
 		height = PAL_HEIGHT;
-		width = 256;
 	} else if(systemType == SYSTEM_NTSC) {
 		height = NTSC_HEIGHT;
-		width = 256;
 	} else return -1;
 
+
+	affichageInitialisation();
+	InitializeControlPads();
+	affichageRendu();
 
 	initNESscreenCEL();
 	initNESpal3DO();
