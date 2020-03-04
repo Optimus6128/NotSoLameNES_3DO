@@ -1,0 +1,2 @@
+del *.iso
+make clean
