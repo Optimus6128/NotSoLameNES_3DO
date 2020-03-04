@@ -380,8 +380,7 @@ void write_memory(unsigned int address,unsigned char data)
 	*/
 
 	// RAM registers
-	if(address < 0x2000) {	// Should be 0x800 instead of 0x2000? Did it mean 2000 in DEC? (or specifically 2048)
-							// (Why this has to mirror four times? Is it necessary? Need to read more about NES hardware)
+	if(address < 0x800) {
 		memory[address] = data;
 		memory[address+2048] = data; // mirror of 0-0x800
 		memory[address+4096] = data; // mirror of 0-0x800

@@ -155,7 +155,7 @@ void start_emulation()
 
 		loopyV = loopyT;
 
-		for(scanline = 0; scanline < height; scanline++) {
+		for(scanline = 1; scanline < height; scanline++) {
 			if(!sprite_zero) {
 				check_sprite_hit(scanline);
 			}

@@ -271,7 +271,8 @@ void render_background(int scanline)
 	int attribs;
 
 	
-	uint16* dst;
+	uint16 *dst;
+	uint8 *bgcachePtr;
 
 	if (!background_on || (systemType == SYSTEM_NTSC && scanline < 8)) return;
 	
@@ -304,8 +305,8 @@ void render_background(int scanline)
 	}
 
 	// draw 33 tiles in a scanline (32 + 1 for scrolling)
+	bgcachePtr = (uint8*)&bgcache[scanline][0];
 	for(tile_count = 0; tile_count < 33; tile_count++) {
-		const int tile_count_offset = tile_count << 3;
 
 		// nt_data (ppu_memory[nt_addr]) * 16 = pattern table address
 		pt_addr = (ppu_memory[nt_addr] << 4) + ((loopyV & 0x7000) >> 12);
@@ -324,7 +325,7 @@ void render_background(int scanline)
 			}
 
 			*dst++ = palette3DO[ppu_memory[0x3f00 + tile]];
-			bgcache[tile_count_offset + i][scanline] = tile;
+			*bgcachePtr++ = tile;
 		}
 
 
@@ -515,7 +516,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 			for(j = 0; j < 8; j++) {
 				// cache pixel for sprite zero detection
 				if(spr_nr == 0)
-					sprcache[x + i] [y + j] = sprite[i] [j];
+					sprcache[y + j][x + i] = sprite[i] [j];
 
 				if(sprite[i] [j] != 0) {
 					// sprite priority check
@@ -526,7 +527,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 					} else {
 						if(sprite_on) {
 							// draw the sprite pixel if the background pixel is transparent (0)
-							if(bgcache[x+i] [y+j] == 0) {
+							if(bgcache[y+j] [x+i] == 0) {
 								draw_pixel(x + i, y + j, ppu_memory[0x3f10 + (sprite[i] [j])]);
 							}
 						}
@@ -554,15 +555,15 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 		} else if((!flip_spr_hor) && (flip_spr_ver)) {
 			for(i = 7; i >= 0; i--) {
 				for(j = 15; j >= 0; j--) {
-					bit1[7 - i] [7 - j] = (ppu_memory[spr_start + j] >> i) & 1;
-					bit2[7 - i] [7 - j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					bit1[7 - i] [15 - j] = (ppu_memory[spr_start + j] >> i) & 1;
+					bit2[7 - i] [15 - j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
 				}
 			}
 		} else if((flip_spr_hor) && (flip_spr_ver)) {
 			for(i = 0; i < 8; i++) {
 				for(j = 15; j >= 0; j--) {
-					bit1[i] [7 - j] = (ppu_memory[spr_start + j] >> i) & 1;
-					bit2[i] [7 - j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
+					bit1[i] [15 - j] = (ppu_memory[spr_start + j] >> i) & 1;
+					bit2[i] [15 - j] = (ppu_memory[spr_start + 8 + j] >> i) & 1;
 				}
 			}
 		}
@@ -617,7 +618,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 			for(j = 0; j < 16; j++) {
 				// cache pixel for sprite zero detection
 				if(spr_nr == 0)
-					sprcache[x + i] [y + j] = sprite[i] [j];
+					sprcache[y + j][x + i] = sprite[i] [j];
 
 				if(sprite[i] [j] != 0) {
 					// sprite priority check
@@ -627,7 +628,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 						}
 					} else {
 						// draw the sprite pixel if the background pixel is transparent (0)
-						if(bgcache[x+i] [y+j] == 0) {
+						if(bgcache[y+j] [x+i] == 0) {
 							if(sprite_on) {
 								draw_pixel(x + i, y + j, ppu_memory[0x3f10 + (sprite[i] [j])]);
 							}
@@ -643,14 +644,16 @@ void check_sprite_hit(int scanline)
 {
 	// sprite zero detection
 	int i;
+	uint8 *bgcachePtr = (uint8*)&bgcache[scanline-1][0];
+	uint8 *sprcachePtr = (uint8*)&sprcache[scanline-1][0];
 	
 	if (!shouldCheckSprCache[scanline]) return;
 
 	for(i = 0; i < width; i++) {
-		if((bgcache[i] [scanline - 1] > 0x00) && (sprcache[i] [scanline - 1] > 0x00)) {
-
+		if((bgcachePtr[i] | sprcachePtr[i])!=0) {
 			// set the sprite zero flag
 			ppu_status |= 0x40;
+			return;
 		}
 	}
 }
