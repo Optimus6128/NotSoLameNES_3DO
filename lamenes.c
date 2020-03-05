@@ -54,11 +54,8 @@
 #include "mappers/cnrom.h"	// 3
 #include "mappers/mmc3.h"	// 4
 
-#include "3DO/GestionAffichage.h"
-
-#include <graphics.h>
-#include <celutils.h>
-
+#include "3DO/core.h"
+#include "3DO/system_graphics.h"
 
 char romfn[256];
 
@@ -82,7 +79,7 @@ CCB *screenCel;
 
 long romlen;
 
-void check_button_events()
+static void check_button_events()
 {
 	uint32	gButtons;
 	unsigned char i;
@@ -126,7 +123,7 @@ void check_button_events()
 	}
 }
 
-void start_emulation()
+static void start_emulation()
 {
 	unsigned short counter = 0;
 	unsigned short scanline = 0;
@@ -174,8 +171,7 @@ void start_emulation()
 
 		render_sprites();
 
-		drawNESscreenCEL();
-		affichageMiseAJour();
+		drawCels(screenCel);
 
 		/*
 		if(!interrupt_flag) 
@@ -188,7 +184,7 @@ void start_emulation()
 	}
 }
 
-void reset_emulation()
+/*static void reset_emulation()
 {
 	if(load_rom(romfn) == 1) {
 		free(sprite_memory);
@@ -206,18 +202,7 @@ void reset_emulation()
 	reset_input();
 
 	start_emulation();
-}
-
-void quit_emulation()
-{
-	// free all memory
-	free(sprite_memory);
-	free(ppu_memory);
-	free(memory);
-	free(romcache);
-
-	exit(0);
-}
+}*/
 
 static void initNESscreenCEL()
 {
@@ -244,14 +229,21 @@ static void initNESpal3DO()
 	}
 }
 
-int main(void)
+void runEmu()
+{
+	if (!pause_emulation) {
+		start_emulation();
+	}
+}
+
+void initEmu()
 {
 	// cpu speed
 	unsigned int NTSC_SPEED = 1789725;
 	unsigned int PAL_SPEED = 1773447;
 
 	// screen width
-	#define SCREEN_WIDTH 256
+	#define NES_SCREEN_WIDTH 256
 	
 	// screen height
 	#define NTSC_HEIGHT 224
@@ -275,13 +267,13 @@ int main(void)
 
 
 	// 64k main memory
-	memory = (unsigned char *)malloc(65536);
+	memory = (unsigned char *)AllocMem(65536, MEMTYPE_ANY);
 
 	// 16k video memory
-	ppu_memory = (unsigned char *)malloc(16384);
+	ppu_memory = (unsigned char *)AllocMem(16384, MEMTYPE_ANY);
 
 	// 256b sprite memory
-	sprite_memory = (unsigned char *)malloc(256);
+	sprite_memory = (unsigned char *)AllocMem(256, MEMTYPE_ANY);
 
 	if(analyze_header("rom.nes") == 1)
 	{
@@ -292,7 +284,7 @@ int main(void)
 	}
 
 	// rom cache memory
-	romcache = (unsigned char *)malloc(romlen);
+	romcache = (unsigned char *)AllocMem(romlen, MEMTYPE_ANY);
 
 	if (load_rom("rom.nes") == 1)
 	{
@@ -312,27 +304,21 @@ int main(void)
 	// Forcing it to PAL for now, probably I have to detect the type from the ROM loaded in the future
 	systemType = SYSTEM_PAL;
 
-	width = 256;
+	width = NES_SCREEN_WIDTH;
 	if(systemType == SYSTEM_PAL) {
 		height = PAL_HEIGHT;
 	} else if(systemType == SYSTEM_NTSC) {
 		height = NTSC_HEIGHT;
-	} else return -1;
-
-
-	affichageInitialisation();
-	InitializeControlPads();
+	} else return;
 
 	initNESscreenCEL();
 	initNESpal3DO();
-
 
 	// first reset the cpu at poweron
 	CPU_reset();
 
 	// reset joystick
 	reset_input();
-
 
 	if(systemType == SYSTEM_PAL) {
 		start_int = 341;
@@ -345,14 +331,10 @@ int main(void)
 		vblank_cycle_timeout = NTSC_VBLANK_CYCLE_TIMEOUT;
 		scanline_refresh = NTSC_SCANLINE_REFRESH;
 	}
+}
 
-	while(1) 
-	{
-		if (!pause_emulation)
-		{
-			start_emulation();
-		}
-	}
-
-	return(0);
+int main()
+{
+	coreInit(initEmu, CORE_DEFAULT);
+	coreRun(runEmu);
 }

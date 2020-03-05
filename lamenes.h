@@ -57,11 +57,6 @@ extern void save_state();
 
 extern long romlen;
 
-extern unsigned char memory_read(unsigned int address);
-extern void write_memory(unsigned int address,unsigned char data);
-
 extern void set_input();
-extern void reset_emulation();
-extern void quit_emulation();
 
 #endif

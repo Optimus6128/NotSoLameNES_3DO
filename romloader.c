@@ -29,6 +29,7 @@
  * SUCH DAMAGE.
  */
 
+#include "../3DO/core.h"
 
 #include <filestreamfunctions.h>
 #include <stdlib.h>
@@ -68,7 +69,7 @@ int analyze_header(char *romfn)
 	* nes header is 15 bytes
 	* nes internal memory (6502 = 65536 bytes (64K))
 	*/
-	header = (unsigned char *)malloc(15);
+	header = (unsigned char *)AllocMem(15, MEMTYPE_ANY);
 
 	romfp = OpenDiskStream(romfn, 0);
 	if (romfp == NULL)

@@ -32,6 +32,8 @@
 /*
  * str_replace.c - string replace function
  */
+ 
+#include "../3DO/core.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -51,7 +53,7 @@ char *str_replace(const char *str, const char *old, const char *new)
 	for(count = 0, p = str; (p = strstr(p, old)); p += len_old)
 		count++;
 
-	ret = malloc(count * (len_new - len_old) + len_str + 1);
+	ret = AllocMem(count * (len_new - len_old) + len_str + 1, MEMTYPE_ANY);
 
 	if(!ret)
 		return NULL;
