@@ -38,6 +38,7 @@
 #define CORE_SHOW_BUFFERS	(1 << 3)
 #define CORE_DEFAULT_INPUT	(1 << 4)
 #define CORE_MENU			(1 << 5)
+#define CORE_NO_VSYNC		(1 << 6)
 #define CORE_DEBUG			(1 << 31)
 
 

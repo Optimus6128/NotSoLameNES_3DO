@@ -321,6 +321,6 @@ void initEmu()
 
 int main()
 {
-	coreInit(initEmu, CORE_DEFAULT);
+	coreInit(initEmu, CORE_SHOW_FPS | CORE_NO_VSYNC);
 	coreRun(runEmu);
 }
