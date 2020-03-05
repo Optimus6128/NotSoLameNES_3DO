@@ -109,7 +109,7 @@ static void runEmulationFrame()
 
 	updateNesInput();
 
-	for(scanline = 1; scanline < NES_screen_height; scanline++) {
+	for(scanline = 0; scanline < NES_screen_height; scanline++) {
 		if(!sprite_zero) {
 			check_sprite_hit(scanline);
 		}
@@ -134,6 +134,26 @@ static void runEmulationFrame()
 	/*if(!interrupt_flag) {
 		counter += IRQ(counter);
 	}*/
+}
+
+static void runEmulationFrameOnly()
+{
+	unsigned short scanline = 0;
+
+	updateNesInput();
+
+	for(scanline = 0; scanline < NES_screen_height; scanline++) {
+		if(!sprite_zero && scanline > 0) {
+			check_sprite_hit(scanline);
+		}
+
+		render_background(scanline);
+	}
+
+	render_sprites();
+
+	// Draw Screen
+	drawCels(screenCel);
 }
 
 /*static void reset_emulation()
@@ -175,7 +195,10 @@ static void initNESpal3DO()
 void runEmu()
 {
 	if (!pause_emulation) {
-		runEmulationFrame();
+		if (pad1[PAD_PAUSE_EMU]==0x40)
+			runEmulationFrame();
+		else
+			runEmulationFrameOnly();
 	}
 }
 

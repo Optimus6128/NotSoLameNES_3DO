@@ -292,9 +292,9 @@ void render_background(int scanline)
 	}
 
 	// draw 33 tiles in a scanline (32 + 1 for scrolling)
-	bgcachePtr = (uint8*)&bgcache[scanline][0];
+	//bgcachePtr = (uint8*)&bgcache[scanline][0];
 	for(tile_count = 0; tile_count < 33; tile_count++) {
-
+		int tile;
 		// nt_data (ppu_memory[nt_addr]) * 16 = pattern table address
 		pt_addr = (ppu_memory[nt_addr] << 4) + ((loopyV & 0x7000) >> 12);
 
@@ -302,7 +302,7 @@ void render_background(int scanline)
 		if(background_addr_hi)
 			pt_addr+=0x1000;
 
-		for(i = 0; i < 8; i++) {
+		/*for(i = 0; i < 8; i++) {
 			const int bit1 = (ppu_memory[pt_addr] >> (7 - i)) & 1;
 			const int bit2 = (ppu_memory[pt_addr + 8] >> (7 - i)) & 1;
 			int tile = (bit2 << 1) | bit1;
@@ -312,9 +312,23 @@ void render_background(int scanline)
 			}
 
 			*dst++ = palette3DO[ppu_memory[0x3f00 + tile]];
-			*bgcachePtr++ = tile;
-		}
+			//*bgcachePtr++ = tile;
+		}*/
 
+		{
+			const int p1 = ppu_memory[pt_addr];
+			const int p2 = ppu_memory[pt_addr + 8];
+			const unsigned char *ppuSrc = &ppu_memory[0x3f00];
+
+			tile = (((p2 >> 6) & 2) | ((p1 >> 7) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
+			tile = (((p2 >> 5) & 2) | ((p1 >> 6) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
+			tile = (((p2 >> 4) & 2) | ((p1 >> 5) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
+			tile = (((p2 >> 3) & 2) | ((p1 >> 4) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
+			tile = (((p2 >> 2) & 2) | ((p1 >> 3) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
+			tile = (((p2 >> 1) & 2) | ((p1 >> 2) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
+			tile = (((p2 >> 0) & 2) | ((p1 >> 1) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
+			tile = (((p2 << 1) & 2) | ((p1 >> 0) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
+		}
 
 		nt_addr++;
 		x_scroll++;
@@ -471,7 +485,7 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 		spritePtr = (unsigned char*)sprite;
 		for(j = 0; j < 8; j++) {
 			unsigned char *sprcachePtr = (unsigned char*)&sprcache[y+j][x];
-			unsigned char *bgcachePtr = (unsigned char*)&bgcache[y+j][x];
+			unsigned short *bgcachePtr = dst + j * screenCel->ccb_Width;
 			for(i = 0; i < 8; i++) {
 				// cache pixel for sprite zero detection
 				const unsigned char value = *spritePtr++;
@@ -533,7 +547,7 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 		spritePtr = (unsigned char*)sprite;
 		for(j = 0; j < 16; j++) {
 			unsigned char *sprcachePtr = (unsigned char*)&sprcache[y+j][x];
-			unsigned char *bgcachePtr = (unsigned char*)&bgcache[y+j][x];
+			unsigned short *bgcachePtr = dst + j * screenCel->ccb_Width;
 			for(i = 0; i < 8; i++) {
 				// cache pixel for sprite zero detection
 				const unsigned char value = *spritePtr++;
@@ -561,7 +575,8 @@ void check_sprite_hit(int scanline)
 {
 	// sprite zero detection
 	int i;
-	uint8 *bgcachePtr = (uint8*)&bgcache[scanline-1][0];
+	//uint8 *bgcachePtr = (uint8*)&bgcache[scanline-1][0];
+	uint16 *bgcachePtr = (uint16*)screenCel->ccb_SourcePtr + (scanline-1) * screenCel->ccb_Width;
 	uint8 *sprcachePtr = (uint8*)&sprcache[scanline-1][0];
 	
 	if (!shouldCheckSprCache[scanline]) return;
