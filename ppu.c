@@ -246,14 +246,6 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 	return;
 }
 
-void draw_pixel(int x, int y, int nescolor)
-{
-	if (nescolor != 0) {
-		uint16 *dst = (uint16*)screenCel->ccb_SourcePtr + y * screenCel->ccb_Width + x;
-		*dst = palette3DO[nescolor];
-	}
-}
-
 void render_background(int scanline)
 {
 	int tile_count;
@@ -410,6 +402,7 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 	unsigned char sprite[8*16];
 
 	unsigned char *spritePtr;
+	uint16 *dst;
 	const int attribsAdd = (attribs & 0x03) << 0x02;
 	
 	if (!sprite_on) return;
@@ -436,38 +429,41 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 		}
 	}
 
+
+	dst = (uint16*)screenCel->ccb_SourcePtr + y * screenCel->ccb_Width + x;
+
 	if(!sprite_16) {
 
 		// 8 x 8 sprites
 		// fetch bits
 		spritePtr = (unsigned char*)sprite;
 		if((!flip_spr_hor) && (!flip_spr_ver)) {
-			for(i = 7; i >= 0; i--) {
-				for(j = 0; j < 8; j++) {
+			for(j = 0; j < 8; j++) {
+				for(i = 7; i >= 0; i--) {
 					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
 					if (spriteVal!=0) spriteVal += attribsAdd;
 					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((flip_spr_hor) && (!flip_spr_ver)) {
-			for(i = 0; i < 8; i++) {
-				for(j = 0; j < 8; j++) {
+			for(j = 0; j < 8; j++) {
+				for(i = 0; i < 8; i++) {
 					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
 					if (spriteVal!=0) spriteVal += attribsAdd;
 					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((!flip_spr_hor) && (flip_spr_ver)) {
-			for(i = 7; i >= 0; i--) {
-				for(j = 7; j >= 0; j--) {
+			for(j = 7; j >= 0; j--) {
+				for(i = 7; i >= 0; i--) {
 					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
 					if (spriteVal!=0) spriteVal += attribsAdd;
 					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((flip_spr_hor) && (flip_spr_ver)) {
-			for(i = 0; i < 8; i++) {
-				for(j = 7; j >= 0; j--) {
+			for(j = 7; j >= 0; j--) {
+				for(i = 0; i < 8; i++) {
 					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
 					if (spriteVal!=0) spriteVal += attribsAdd;
 					*spritePtr++ = spriteVal;
@@ -476,57 +472,60 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 		}
 
 		spritePtr = (unsigned char*)sprite;
-		for(i = 0; i < 8; i++) {
-			for(j = 0; j < 8; j++) {
+		for(j = 0; j < 8; j++) {
+			unsigned char *sprcachePtr = (unsigned char*)&sprcache[y+j][x];
+			unsigned char *bgcachePtr = (unsigned char*)&bgcache[y+j][x];
+			for(i = 0; i < 8; i++) {
 				// cache pixel for sprite zero detection
 				const unsigned char value = *spritePtr++;
 				if(spr_nr == 0)
-					sprcache[y + j][x + i] = value;
+					*sprcachePtr++ = value;
 
 				if(value != 0) {
 					// sprite priority check
 					if(!disp_spr_back) {
-						draw_pixel(x + i, y + j, ppu_memory[0x3f10 + value]);
+						*(dst + i) = palette3DO[ppu_memory[0x3f10 + value]];
 					} else {
 						// draw the sprite pixel if the background pixel is transparent (0)
-						if(bgcache[y+j] [x+i] == 0) {
-							draw_pixel(x + i, y + j, ppu_memory[0x3f10 + value]);
+						if(*bgcachePtr++ == 0) {
+							*(dst + i) = palette3DO[ppu_memory[0x3f10 + value]];
 						}
 					}
 				}
 			}
+			dst += screenCel->ccb_Width;
 		}
 	} else {
 		// 8 x 16 sprites
 		// fetch bits
 		spritePtr = (unsigned char*)sprite;
 		if((!flip_spr_hor) && (!flip_spr_ver)) {
-			for(i = 7; i >= 0; i--) {
-				for(j = 0; j < 16; j++) {
+			for(j = 0; j < 16; j++) {
+				for(i = 7; i >= 0; i--) {
 					int spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
 					if (spriteVal!=0) spriteVal += attribsAdd;
 					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((flip_spr_hor) && (!flip_spr_ver)) {
-			for(i = 0; i < 8; i++) {
-				for(j = 0; j < 16; j++) {
+			for(j = 0; j < 16; j++) {
+				for(i = 0; i < 8; i++) {
 					int spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
 					if (spriteVal!=0) spriteVal += attribsAdd;
 					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((!flip_spr_hor) && (flip_spr_ver)) {
-			for(i = 7; i >= 0; i--) {
-				for(j = 15; j >= 0; j--) {
+			for(j = 15; j >= 0; j--) {
+				for(i = 7; i >= 0; i--) {
 					int spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
 					if (spriteVal!=0) spriteVal += attribsAdd;
 					*spritePtr++ = spriteVal;
 				}
 			}
 		} else if((flip_spr_hor) && (flip_spr_ver)) {
-			for(i = 0; i < 8; i++) {
-				for(j = 15; j >= 0; j--) {
+			for(j = 15; j >= 0; j--) {
+				for(i = 0; i < 8; i++) {
 					int spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
 					if (spriteVal!=0) spriteVal += attribsAdd;
 					*spritePtr++ = spriteVal;
@@ -535,25 +534,28 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 		}
 
 		spritePtr = (unsigned char*)sprite;
-		for(i = 0; i < 8; i++) {
-			for(j = 0; j < 16; j++) {
+		for(j = 0; j < 16; j++) {
+			unsigned char *sprcachePtr = (unsigned char*)&sprcache[y+j][x];
+			unsigned char *bgcachePtr = (unsigned char*)&bgcache[y+j][x];
+			for(i = 0; i < 8; i++) {
 				// cache pixel for sprite zero detection
 				const unsigned char value = *spritePtr++;
 				if(spr_nr == 0)
-					sprcache[y + j][x + i] = value;
+					*sprcachePtr++ = value;
 
 				if(value != 0) {
 					// sprite priority check
 					if(!disp_spr_back) {
-						draw_pixel(x + i, y + j, ppu_memory[0x3f10 + value]);
+						*(dst + i) = palette3DO[ppu_memory[0x3f10 + value]];
 					} else {
 						// draw the sprite pixel if the background pixel is transparent (0)
-						if(bgcache[y+j] [x+i] == 0) {
-							draw_pixel(x + i, y + j, ppu_memory[0x3f10 + value]);
+						if(*bgcachePtr++ == 0) {
+							*(dst + i) = palette3DO[ppu_memory[0x3f10 + value]];
 						}
 					}
 				}
 			}
+			dst += screenCel->ccb_Width;
 		}
 	}
 }
