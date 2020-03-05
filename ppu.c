@@ -49,9 +49,9 @@
 #include "memory.h"
 
 // gfx cache -> [hor] [ver]
-unsigned char bgcache[256+8] [256+8];
-unsigned char sprcache[256+8] [256+8];
-unsigned char shouldCheckSprCache[256+8];
+unsigned char bgcache[256+8][240];
+unsigned char sprcache[256+8][240];
+unsigned char shouldCheckSprCache[240];
 
 // ppu control registers
 unsigned int ppu_control1 = 0x00;
@@ -387,7 +387,7 @@ void render_background(int scanline)
 }
 
 
-void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
+void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 {
 	int disp_spr_back;
 	int flip_spr_hor;
@@ -425,7 +425,9 @@ void render_sprite(int y, int x, int pattern_number, int attribs, int spr_nr)
 		int sprHeight = 8;
 		if (sprite_16) sprHeight = 16;
 		for (i=0; i<sprHeight; ++i) {
-			shouldCheckSprCache[y+i] = 1;
+			const uint32 yi = y + i;
+			if (yi < 240)
+				shouldCheckSprCache[yi] = 1;
 		}
 	}
 
@@ -590,6 +592,6 @@ void render_sprites()
 	// sprites are drawn in priority from sprite 64 to 0
 	for(i = 63; i >= 0; i--) 
 	{
-		render_sprite(sprite_memory[i * 4],sprite_memory[i * 4 + 3],sprite_memory[i * 4 + 1],sprite_memory[i * 4 + 2],i);
+		render_sprite(sprite_memory[i * 4 + 3], sprite_memory[i * 4], sprite_memory[i * 4 + 1], sprite_memory[i * 4 + 2], i);
 	}
 }
