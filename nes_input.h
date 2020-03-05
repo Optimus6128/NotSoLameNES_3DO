@@ -32,17 +32,16 @@
 #ifndef LAMENES_INPUT_H
 #define LAMENES_INPUT_H
 
-extern void set_input(char *pad_key);
-extern void clear_input(char *pad_key);
-extern void reset_input();
+enum {	PAD_UP, PAD_DOWN, PAD_LEFT, PAD_RIGHT, 
+		PAD_A, PAD_B, 
+		PAD_SELECT, PAD_START, 
+		PAD_PAUSE_EMU, PAD_LOAD_STATE, PAD_SAVE_STATE, 
+		PAD_BUTTONS_NUM };
 
-extern int pad1_DOWN;
-extern int pad1_UP;
-extern int pad1_LEFT;
-extern int pad1_RIGHT;
-extern int pad1_START;
-extern int pad1_SELECT;
-extern int pad1_A;
-extern int pad1_B;
+
+void updateNesInput();
+void resetNesInput();
+
+extern unsigned char pad1[PAD_BUTTONS_NUM];
 
 #endif

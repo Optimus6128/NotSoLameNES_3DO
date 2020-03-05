@@ -31,7 +31,7 @@
 
 #include "memory.h"
 #include "ppu.h"
-#include "input.h"
+#include "nes_input.h"
 #include "lame6502.h"
 #include "macros.h"
 
@@ -39,6 +39,10 @@ char *savfile;
 char *statefile;
 
 int pad1_readcount = 0;
+
+unsigned char memory[CPU_MEMORY];
+unsigned char ppu_memory[PPU_MEMORY];
+unsigned char sprite_memory[SPRITE_MEMORY];
 
 // FILE *sav_fp;
 
@@ -272,42 +276,42 @@ unsigned char memory_read(unsigned int address) {
 	if(address == 0x4016) {
 		switch(pad1_readcount) {
 			case 0:
-			memory[address] = pad1_A;
+			memory[address] = pad1[PAD_A];
 			pad1_readcount++;
 			break;
 
 			case 1:
-			memory[address] = pad1_B;
+			memory[address] = pad1[PAD_B];
 			pad1_readcount++;
 			break;
 
 			case 2:
-			memory[address] = pad1_SELECT;
+			memory[address] = pad1[PAD_SELECT];
 			pad1_readcount++;
 			break;
 
 			case 3:
-			memory[address] = pad1_START;
+			memory[address] = pad1[PAD_START];
 			pad1_readcount++;
 			break;
 
 			case 4:
-			memory[address] = pad1_UP;
+			memory[address] = pad1[PAD_UP];
 			pad1_readcount++;
 			break;
 
 			case 5:
-			memory[address] = pad1_DOWN;
+			memory[address] = pad1[PAD_DOWN];
 			pad1_readcount++;
 			break;
 
 			case 6:
-			memory[address] = pad1_LEFT;
+			memory[address] = pad1[PAD_LEFT];
 			pad1_readcount++;
 			break;
 
 			case 7:
-			memory[address] = pad1_RIGHT;
+			memory[address] = pad1[PAD_RIGHT];
 			pad1_readcount = 0;
 			break;
 		}

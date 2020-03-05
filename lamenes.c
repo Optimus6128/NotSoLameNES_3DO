@@ -42,7 +42,7 @@
 #include "romloader.h"
 #include "ppu.h"
 #include "palette.h"
-#include "input.h"
+#include "nes_input.h"
 #include "memory.h"
 
 #include "lib/str_chrchk.h"
@@ -55,6 +55,7 @@
 #include "mappers/mmc3.h"	// 4
 
 #include "3DO/core.h"
+#include "3DO/input.h"
 #include "3DO/system_graphics.h"
 
 char romfn[256];
@@ -71,56 +72,12 @@ int systemType;
 
 unsigned char pause_emulation = 0;
 
-unsigned short width;
-unsigned short height;
+unsigned short NES_screen_width;
+unsigned short NES_screen_height;
 
 CCB *screenCel;
 
 long romlen;
-
-static void check_button_events()
-{
-	uint32	gButtons;
-	unsigned char i;
-
-	DoControlPad(1, &gButtons, (ControlUp | ControlDown | ControlLeft | ControlRight));
-
-	for (i=0;i<9;i++)
-		clear_input((char *) i);
-
-	if (gButtons & ControlDown) {
-		set_input((char *) 1);
-	}
-
-	if (gButtons & ControlUp) {
-		set_input((char *) 2);
-	}
-
-	if (gButtons & ControlLeft) {
-		set_input((char *) 3);
-	}
-
-	if (gButtons & ControlRight) {
-		set_input((char *) 4);
-	}
-
-	if (gButtons & ControlStart) {
-		set_input((char *) 5);
-	}
-
-	//	Select
-	if (gButtons & ControlC) {
-		set_input((char *) 6);
-	}
-
-	if (gButtons & ControlA) {
-		set_input((char *) 7);
-	}
-
-	if (gButtons & ControlB) {
-		set_input((char *) 8);
-	}
-}
 
 static void runEmulationFrame()
 {
@@ -150,7 +107,9 @@ static void runEmulationFrame()
 
 	loopyV = loopyT;
 
-	for(scanline = 1; scanline < height; scanline++) {
+	updateNesInput();
+
+	for(scanline = 1; scanline < NES_screen_height; scanline++) {
 		if(!sprite_zero) {
 			check_sprite_hit(scanline);
 		}
@@ -175,8 +134,6 @@ static void runEmulationFrame()
 	/*if(!interrupt_flag) {
 		counter += IRQ(counter);
 	}*/
-
-	check_button_events();
 }
 
 /*static void reset_emulation()
@@ -194,26 +151,17 @@ static void runEmulationFrame()
 
 	CPU_reset();
 
-	reset_input();
+	resetNesInput();
 
 	runEmulationFrame();
 }*/
 
 static void initNESscreenCEL()
 {
-	//int x,y;
-	//uint16 *dst;
-
-	screenCel = CreateCel(width + 8, height + 8, 16, CREATECEL_UNCODED, NULL);
+	screenCel = CreateCel(NES_screen_width + 8, NES_screen_height + 8, 16, CREATECEL_UNCODED, NULL);
 	screenCel->ccb_Flags |= (CCB_LAST | CCB_BGND);
 	screenCel->ccb_XPos = 32 << 16;
-
-	/*dst = (uint16*)screenCel->ccb_SourcePtr;
-	for (y=0; y<screenCel->ccb_Height; ++y) {
-		for (x=0; x<screenCel->ccb_Width; ++x) {
-			*dst++ = x ^ y;
-		}
-	}*/
+	screenCel->ccb_PRE1 = (screenCel->ccb_PRE1 &= ~PRE1_TLHPCNT_MASK) | (NES_screen_width - 1);
 }
 
 static void initNESpal3DO()
@@ -290,11 +238,11 @@ void initEmu()
 	// Forcing it to PAL for now, probably I have to detect the type from the ROM loaded in the future
 	systemType = SYSTEM_PAL;
 
-	width = NES_SCREEN_WIDTH;
+	NES_screen_width = NES_SCREEN_WIDTH;
 	if(systemType == SYSTEM_PAL) {
-		height = PAL_HEIGHT;
+		NES_screen_height = PAL_HEIGHT;
 	} else if(systemType == SYSTEM_NTSC) {
-		height = NTSC_HEIGHT;
+		NES_screen_height = NTSC_HEIGHT;
 	} else return;
 
 	initNESscreenCEL();
@@ -304,7 +252,7 @@ void initEmu()
 	CPU_reset();
 
 	// reset joystick
-	reset_input();
+	resetNesInput();
 
 	if(systemType == SYSTEM_PAL) {
 		start_int = 341;

@@ -421,7 +421,7 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 		if (sprite_16) sprHeight = 16;
 		for (i=0; i<sprHeight; ++i) {
 			const uint32 yi = y + i;
-			if (yi < 240)
+			if (yi < NES_screen_height)
 				shouldCheckSprCache[yi] = 1;
 		}
 	}
@@ -566,7 +566,7 @@ void check_sprite_hit(int scanline)
 	
 	if (!shouldCheckSprCache[scanline]) return;
 
-	for(i = 0; i < width; i++) {
+	for(i = 0; i < NES_screen_width; i++) {
 		if((bgcachePtr[i] | sprcachePtr[i])!=0) {
 			// set the sprite zero flag
 			ppu_status |= 0x40;

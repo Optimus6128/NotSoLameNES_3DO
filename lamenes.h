@@ -46,8 +46,8 @@ extern CCB *screenCel;
 extern unsigned char CPU_is_running;
 extern unsigned char pause_emulation;
 
-extern unsigned short width;
-extern unsigned short height;
+extern unsigned short NES_screen_width;
+extern unsigned short NES_screen_height;
 
 extern void load_state();
 extern void save_state();

@@ -37,19 +37,13 @@
 //#define DISASSAMBLE
 //#define STACK_DEBUG
 
-/*#include <sys/types.h>
-#include <ctype.h>*/
 #include <stdio.h>
 #include <string.h>
-/*#include <types.h>*/
-/*#include <unistd.h>*/
 #include <stdlib.h>
 
 #include "instructions.h"
 #include "disas.h"
 #include "memory.h"
-
-#include "../lamenes.h"
 
 
 /*
