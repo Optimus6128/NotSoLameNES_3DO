@@ -55,9 +55,9 @@
 #include "mappers/mmc3.h"	// 4
 
 #include "3DO/GestionAffichage.h"
-#include "3DO/GestionSprites.h"
-#include "3DO/GestionTextes.h"
+
 #include <graphics.h>
+#include <celutils.h>
 
 
 char romfn[256];
@@ -322,7 +322,6 @@ int main(void)
 
 	affichageInitialisation();
 	InitializeControlPads();
-	affichageRendu();
 
 	initNESscreenCEL();
 	initNESpal3DO();

@@ -36,41 +36,12 @@
 #include <event.h>
 /* ------------------------------ */
 
-/* Inclusions des API personnelles */
-// Gestion des sprites
-#include "GestionSprites.h"
-// Gestion des textes
-#include "GestionTextes.h"
-/* ------------------------------ */
-
-void fill_rectangle(int x, int y, int size_rect, int RED, int GREEN, int BLUE);
-
-//void draw_pixel(int x, int y, int nescolor);
 void drawNESscreenCEL(void);
 
 /* Initialise l'affichage */
 bool affichageInitialisation(void);
-/* Cree le rendu de l'affichage en fonction des multiples elements */
-void affichageRendu(void);
-/* Cree un ecran neutre */
-void affichageCouleurUnie(int32 couleur);
 /* Met a jour l'affichage */
 void affichageMiseAJour(void);
-/* Supprime l'affichage */
-void affichageSuppression(int32 fondu);
-/* Charge une image de fond */
-bool imageFondChargement(char *pointeurFichier);
-/* Ajoute un element a la liste d'affichage */
-void listeAffichageAjout(Node *pointeurElement, bool sens, int32 type, int32 index);
-/* Modifie la priorite d'un element dans la liste d'affichage */
-void listeAffichagePriorite(Node *pointeurElement, int32 index);
-/* Supprime un element a la liste d'affichage */
-void listeAffichageSuppression(Node *pointeurElement);
-/* Vide la liste d'affichage */
-void listeAffichagePurge(int32 type);
-/* Nombre d'elements dans la liste d'affichage */
-int32 listeAffichageElements(int32 type);
-/* Si la 3do est NTSC ou PAL1 ou PAL2 */
-bool Screen_format();
+
 
 #endif

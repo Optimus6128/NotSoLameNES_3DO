@@ -36,11 +36,6 @@
 #include "lame6502/lame6502.h"
 #include "lame6502/disas.h"
 
-#include "3DO/GestionAffichage.h"
-#include "3DO/GestionSprites.h"
-#include "3DO/GestionTextes.h"
-
-
 #include "lamenes.h"
 #include "ppu.h"
 #include "macros.h"
@@ -48,7 +43,7 @@
 #include "palette.h"
 #include "memory.h"
 
-// gfx cache -> [hor] [ver]
+// gfx cache -> [hor][ver]
 unsigned char bgcache[256+8][240];
 unsigned char sprcache[256+8][240];
 unsigned char shouldCheckSprCache[240];
