@@ -43,7 +43,7 @@
 #include "romloader.h"
 
 /* pointers to the nes headers */
-unsigned char *header;
+unsigned char header[15];
 
 unsigned char PRG; /* rom mem */
 unsigned char CHR; /* vrom mem */
@@ -64,12 +64,6 @@ int analyze_header(char *romfn)
 	int i;
 
 	Stream *romfp;
-
-	/*
-	* nes header is 15 bytes
-	* nes internal memory (6502 = 65536 bytes (64K))
-	*/
-	header = (unsigned char *)AllocMem(15, MEMTYPE_ANY);
 
 	romfp = OpenDiskStream(romfn, 0);
 	if (romfp == NULL)

@@ -32,11 +32,17 @@
 #ifndef LAMENES_MEMORY_H
 #define LAMENES_MEMORY_H
 
-extern unsigned char *memory;
-extern unsigned char *ppu_memory;
-extern unsigned char *sprite_memory;
+#define CPU_MEMORY 65536
+#define PPU_MEMORY 16384
+#define SPRITE_MEMORY 256
 
-extern unsigned char memory_read(unsigned int address);
-extern void write_memory(unsigned int address,unsigned char data);
+unsigned char memory[CPU_MEMORY];
+unsigned char ppu_memory[PPU_MEMORY];
+unsigned char sprite_memory[SPRITE_MEMORY];
+
+unsigned char memory_read(unsigned int address);
+void write_memory(unsigned int address,unsigned char data);
+
+
 
 #endif

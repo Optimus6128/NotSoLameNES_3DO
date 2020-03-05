@@ -69,7 +69,6 @@ unsigned int scanline_refresh;
 
 int systemType;
 
-unsigned char CPU_is_running = 1;
 unsigned char pause_emulation = 0;
 
 unsigned short width;
@@ -123,65 +122,61 @@ static void check_button_events()
 	}
 }
 
-static void start_emulation()
+static void runEmulationFrame()
 {
 	unsigned short counter = 0;
 	unsigned short scanline = 0;
 
 
-	while(CPU_is_running) {
-		CPU_execute(start_int);
+	CPU_execute(start_int);
 
-		// set ppu_status D7 to 1 and enter vblank
-		ppu_status |= 0x80;
-		write_memory(0x2002,ppu_status);
+	// set ppu_status D7 to 1 and enter vblank
+	ppu_status |= 0x80;
+	write_memory(0x2002,ppu_status);
 
-		counter += CPU_execute(12); // needed for some roms
+	counter += CPU_execute(12); // needed for some roms
 
-		if(exec_nmi_on_vblank) {
-			counter += NMI(counter);
-		}
-
-		counter += CPU_execute(vblank_cycle_timeout);
-
-		// vblank ends (ppu_status D7) is set to 0, sprite_zero (ppu_status D6) is set to 0
-		ppu_status &= 0x3F;
-	
-		// and write to mem
-		write_memory(0x2002,ppu_status);
-
-		loopyV = loopyT;
-
-		for(scanline = 1; scanline < height; scanline++) {
-			if(!sprite_zero) {
-				check_sprite_hit(scanline);
-			}
-
-			render_background(scanline);
-
-			counter += CPU_execute(scanline_refresh);
-
-			if(mmc3_irq_enable == 1) {
-				if(scanline == mmc3_irq_counter) {
-					IRQ(counter);
-					mmc3_irq_counter--;
-				}
-			}
-		}
-
-		render_sprites();
-
-		drawCels(screenCel);
-
-		/*
-		if(!interrupt_flag) 
-		{
-			counter += IRQ(counter);
-		}
-		*/
-		
-		check_button_events();
+	if(exec_nmi_on_vblank) {
+		counter += NMI(counter);
 	}
+
+	counter += CPU_execute(vblank_cycle_timeout);
+
+	// vblank ends (ppu_status D7) is set to 0, sprite_zero (ppu_status D6) is set to 0
+	ppu_status &= 0x3F;
+
+	// and write to mem
+	write_memory(0x2002,ppu_status);
+
+	loopyV = loopyT;
+
+	for(scanline = 1; scanline < height; scanline++) {
+		if(!sprite_zero) {
+			check_sprite_hit(scanline);
+		}
+
+		render_background(scanline);
+
+		counter += CPU_execute(scanline_refresh);
+
+		if(mmc3_irq_enable == 1) {
+			if(scanline == mmc3_irq_counter) {
+				IRQ(counter);
+				mmc3_irq_counter--;
+			}
+		}
+	}
+
+	render_sprites();
+
+	// Draw Screen
+	drawCels(screenCel);
+
+	/*if(!interrupt_flag) {
+		counter += IRQ(counter);
+	}*/
+
+	check_button_events();
 }
 
 /*static void reset_emulation()
@@ -201,7 +196,7 @@ static void start_emulation()
 
 	reset_input();
 
-	start_emulation();
+	runEmulationFrame();
 }*/
 
 static void initNESscreenCEL()
@@ -232,7 +227,7 @@ static void initNESpal3DO()
 void runEmu()
 {
 	if (!pause_emulation) {
-		start_emulation();
+		runEmulationFrame();
 	}
 }
 
@@ -265,15 +260,6 @@ void initEmu()
 	unsigned int NTSC_VBLANK_CYCLE_TIMEOUT = (NTSC_TOTAL_HEIGHT-NTSC_HEIGHT) * NTSC_VBLANK_INT / NTSC_TOTAL_HEIGHT;
 	unsigned int PAL_VBLANK_CYCLE_TIMEOUT = (PAL_TOTAL_HEIGHT-PAL_HEIGHT) * PAL_VBLANK_INT / PAL_TOTAL_HEIGHT;
 
-
-	// 64k main memory
-	memory = (unsigned char *)AllocMem(65536, MEMTYPE_ANY);
-
-	// 16k video memory
-	ppu_memory = (unsigned char *)AllocMem(16384, MEMTYPE_ANY);
-
-	// 256b sprite memory
-	sprite_memory = (unsigned char *)AllocMem(256, MEMTYPE_ANY);
 
 	if(analyze_header("rom.nes") == 1)
 	{

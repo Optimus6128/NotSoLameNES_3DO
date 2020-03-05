@@ -40,9 +40,6 @@ extern char romfn[256];
 
 extern unsigned char *romcache;
 
-extern unsigned char *ppu_memory;
-extern unsigned char *sprite_memory;
-
 extern int systemType;
 extern CCB *screenCel;
 

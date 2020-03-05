@@ -35,10 +35,6 @@
 #include "lame6502.h"
 #include "macros.h"
 
-unsigned char *memory;
-unsigned char *ppu_memory;
-unsigned char *sprite_memory;
-
 char *savfile;
 char *statefile;
 
