@@ -78,6 +78,7 @@ uint16 palette3DO[NUM_PAL_COLORS];
 long romlen;
 
 int frameskipNum = 0;
+bool skipBackgroundRendering = false;
 
 static void runEmulationFrame()
 {
@@ -86,7 +87,7 @@ static void runEmulationFrame()
 	unsigned short counter = 0;
 	unsigned short scanline = 0;
 
-	bool skipThisFrame = frame;
+	bool skipThisFrame = frame || skipBackgroundRendering;
 
 
 	CPU_execute(start_int);
@@ -203,16 +204,19 @@ static void initNESpal3DO()
 void runEmu()
 {
 	// Frameskip to speed up things for testing
-	if (isJoyButtonPressedOnce(JOY_BUTTON_LPAD)) {
+	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
 		frameskipNum = (frameskipNum + 1) & 3;
 		setBackgroundColor((frameskipNum + 1) * (frameskipNum + 2));
 	}
 
+	// No rendering emulation (to purely benchmark CPU)
+	skipBackgroundRendering = isJoyButtonPressed(JOY_BUTTON_RPAD);
+
 	if (!pause_emulation) {
-		if (pad1[PAD_PAUSE_EMU]==0x40)
+		if (!isJoyButtonPressed(JOY_BUTTON_LPAD))
 			runEmulationFrame();
 		else
-			runEmulationFrameOnly();
+			runEmulationFrameOnly();	// No CPU update (to purely benchmark rendering)
 	}
 }
 
