@@ -79,10 +79,16 @@ CCB *screenCel;
 
 long romlen;
 
+int frameskipNum = 0;
+
 static void runEmulationFrame()
 {
+	static int frame = 0;
+
 	unsigned short counter = 0;
 	unsigned short scanline = 0;
+
+	bool skipThisFrame = frame;
 
 
 	CPU_execute(start_int);
@@ -108,13 +114,14 @@ static void runEmulationFrame()
 	loopyV = loopyT;
 
 	updateNesInput();
-
+	
 	for(scanline = 0; scanline < NES_screen_height; scanline++) {
 		if(!sprite_zero && scanline > 0) {
 			check_sprite_hit(scanline);
 		}
 
-		render_background(scanline);
+		if (!skipThisFrame)
+			render_background(scanline);
 
 		counter += CPU_execute(scanline_refresh);
 
@@ -126,7 +133,8 @@ static void runEmulationFrame()
 		}
 	}
 
-	render_sprites();
+	if (!skipThisFrame)
+		render_sprites();
 
 	// Draw Screen
 	drawCels(screenCel);
@@ -134,6 +142,8 @@ static void runEmulationFrame()
 	/*if(!interrupt_flag) {
 		counter += IRQ(counter);
 	}*/
+
+	frame = (frame + 1) % (frameskipNum + 1);
 }
 
 static void runEmulationFrameOnly()
@@ -178,10 +188,20 @@ static void runEmulationFrameOnly()
 
 static void initNESscreenCEL()
 {
+	int x,y;
+	uint16 *dst;
+
 	screenCel = CreateCel(NES_screen_width + 8, NES_screen_height + 8, 16, CREATECEL_UNCODED, NULL);
 	screenCel->ccb_Flags |= (CCB_LAST | CCB_BGND);
 	screenCel->ccb_XPos = 32 << 16;
 	screenCel->ccb_PRE1 = (screenCel->ccb_PRE1 &= ~PRE1_TLHPCNT_MASK) | (NES_screen_width - 1);
+
+	dst = (uint16*)screenCel->ccb_SourcePtr;
+	for (y=0; y<screenCel->ccb_Height; ++y) {
+		for (x=0; x<screenCel->ccb_Width; ++x) {
+			*dst++ = x ^ y;
+		}
+	}
 }
 
 static void initNESpal3DO()
@@ -194,6 +214,12 @@ static void initNESpal3DO()
 
 void runEmu()
 {
+	// Frameskip to speed up things for testing
+	if (isJoyButtonPressedOnce(JOY_BUTTON_LPAD)) {
+		frameskipNum = (frameskipNum + 1) & 3;
+		setBackgroundColor((frameskipNum + 1) * (frameskipNum + 2));
+	}
+
 	if (!pause_emulation) {
 		if (pad1[PAD_PAUSE_EMU]==0x40)
 			runEmulationFrame();

@@ -302,19 +302,6 @@ void render_background(int scanline)
 		if(background_addr_hi)
 			pt_addr+=0x1000;
 
-		/*for(i = 0; i < 8; i++) {
-			const int bit1 = (ppu_memory[pt_addr] >> (7 - i)) & 1;
-			const int bit2 = (ppu_memory[pt_addr + 8] >> (7 - i)) & 1;
-			int tile = (bit2 << 1) | bit1;
-
-			if(tile != 0) {
-				tile += attribs;
-			}
-
-			*dst++ = palette3DO[ppu_memory[0x3f00 + tile]];
-			//*bgcachePtr++ = tile;
-		}*/
-
 		{
 			const int p1 = ppu_memory[pt_addr];
 			const int p2 = ppu_memory[pt_addr + 8];
