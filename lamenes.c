@@ -191,15 +191,20 @@ static void initNESscreenCEL()
 	int x,y;
 	uint16 *dst;
 
-	screenCel = CreateCel(NES_screen_width + 8, NES_screen_height + 8, 16, CREATECEL_UNCODED, NULL);
+	screenCel = CreateCel(NES_screen_width + 8, NES_screen_height + 16, 16, CREATECEL_UNCODED, NULL);
 	screenCel->ccb_Flags |= (CCB_LAST | CCB_BGND);
 	screenCel->ccb_XPos = 32 << 16;
 	screenCel->ccb_PRE1 = (screenCel->ccb_PRE1 &= ~PRE1_TLHPCNT_MASK) | (NES_screen_width - 1);
 
 	dst = (uint16*)screenCel->ccb_SourcePtr;
-	for (y=0; y<screenCel->ccb_Height; ++y) {
+	for (y=0; y<256; ++y) {
+		int yc = y >> 4;
 		for (x=0; x<screenCel->ccb_Width; ++x) {
-			*dst++ = x ^ y;
+			int xc = x >> 4;
+			int c = yc * 16 + xc;
+			if (c < 0 || c > 63) c = 63;
+			
+			*dst++ = MAKE_NES_TO_3DO_PAL(palette[c].r, palette[c].g, palette[c].b);
 		}
 	}
 }
@@ -208,7 +213,7 @@ static void initNESpal3DO()
 {
 	int i;
 	for (i=0; i<64; ++i) {
-		palette3DO[i] = MakeRGB15(palette[i].r, palette[i].g, palette[i].b);
+		palette3DO[i] = MAKE_NES_TO_3DO_PAL(palette[i].r, palette[i].g, palette[i].b);
 	}
 }
 
