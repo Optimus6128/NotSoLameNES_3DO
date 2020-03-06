@@ -61,8 +61,6 @@ char title[128];
 
 int analyze_header(char *romfn)
 {
-	int i;
-
 	Stream *romfp;
 
 	romfp = OpenDiskStream(romfn, 0);
@@ -71,9 +69,9 @@ int analyze_header(char *romfn)
 		return(1);
 	}
 
-	romlen = SeekDiskStream(romfp, 0, 3);
+	romlen = SeekDiskStream(romfp, 0, SEEK_END);
 
-	SeekDiskStream(romfp, 0, 1);
+	SeekDiskStream(romfp, 0, SEEK_SET);
 
 	ReadDiskStream(romfp, (char *)&header[0], 15);
 

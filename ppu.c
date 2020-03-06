@@ -245,8 +245,6 @@ void render_background(int scanline)
 {
 	int tile_count;
 
-	int i;
-
 	int nt_addr;
 	int at_addr;
 
@@ -257,9 +255,7 @@ void render_background(int scanline)
 
 	int attribs;
 
-	
 	uint16 *dst;
-	uint8 *bgcachePtr;
 
 	if (!background_on || (systemType == SYSTEM_NTSC && scanline < 8)) return;
 	
