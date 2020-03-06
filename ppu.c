@@ -444,41 +444,62 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 	dst = (uint16*)screenCel->ccb_SourcePtr + y * screenCel->ccb_Width + x;
 
 	if(!sprite_16) {
+		int spriteVal;
 
 		// 8 x 8 sprites
 		// fetch bits
 		spritePtr = (unsigned char*)sprite;
 		if((!flip_spr_hor) && (!flip_spr_ver)) {
 			for(j = 0; j < 8; j++) {
-				for(i = 7; i >= 0; i--) {
-					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
-					if (spriteVal!=0) spriteVal += attribsAdd;
-					*spritePtr++ = spriteVal;
-				}
+				const unsigned char p1 = ppu_memory[spr_start + j];
+				const unsigned char p2 = ppu_memory[spr_start + 8 + j];
+				spriteVal = ((p2 >> 6) & 2) | ((p1 >> 7) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 5) & 2) | ((p1 >> 6) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 4) & 2) | ((p1 >> 5) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 3) & 2) | ((p1 >> 4) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 2) & 2) | ((p1 >> 3) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 1) & 2) | ((p1 >> 2) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 0) & 2) | ((p1 >> 1) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 << 1) & 2) | ((p1 >> 0) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
 			}
 		} else if((flip_spr_hor) && (!flip_spr_ver)) {
 			for(j = 0; j < 8; j++) {
-				for(i = 0; i < 8; i++) {
-					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
-					if (spriteVal!=0) spriteVal += attribsAdd;
-					*spritePtr++ = spriteVal;
-				}
+				const unsigned char p1 = ppu_memory[spr_start + j];
+				const unsigned char p2 = ppu_memory[spr_start + 8 + j];
+				spriteVal = ((p2 << 1) & 2) | ((p1 >> 0) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 0) & 2) | ((p1 >> 1) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 1) & 2) | ((p1 >> 2) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 2) & 2) | ((p1 >> 3) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 3) & 2) | ((p1 >> 4) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 4) & 2) | ((p1 >> 5) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 5) & 2) | ((p1 >> 6) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 6) & 2) | ((p1 >> 7) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
 			}
 		} else if((!flip_spr_hor) && (flip_spr_ver)) {
 			for(j = 7; j >= 0; j--) {
-				for(i = 7; i >= 0; i--) {
-					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
-					if (spriteVal!=0) spriteVal += attribsAdd;
-					*spritePtr++ = spriteVal;
-				}
+				const unsigned char p1 = ppu_memory[spr_start + j];
+				const unsigned char p2 = ppu_memory[spr_start + 8 + j];
+				spriteVal = ((p2 >> 6) & 2) | ((p1 >> 7) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 5) & 2) | ((p1 >> 6) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 4) & 2) | ((p1 >> 5) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 3) & 2) | ((p1 >> 4) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 2) & 2) | ((p1 >> 3) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 1) & 2) | ((p1 >> 2) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 0) & 2) | ((p1 >> 1) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 << 1) & 2) | ((p1 >> 0) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
 			}
 		} else if((flip_spr_hor) && (flip_spr_ver)) {
 			for(j = 7; j >= 0; j--) {
-				for(i = 0; i < 8; i++) {
-					unsigned char spriteVal = (((ppu_memory[spr_start + 8 + j] >> i) & 1) << 1) | ((ppu_memory[spr_start + j] >> i) & 1);
-					if (spriteVal!=0) spriteVal += attribsAdd;
-					*spritePtr++ = spriteVal;
-				}
+				const unsigned char p1 = ppu_memory[spr_start + j];
+				const unsigned char p2 = ppu_memory[spr_start + 8 + j];
+				spriteVal = ((p2 << 1) & 2) | ((p1 >> 0) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 0) & 2) | ((p1 >> 1) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 1) & 2) | ((p1 >> 2) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 2) & 2) | ((p1 >> 3) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 3) & 2) | ((p1 >> 4) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 4) & 2) | ((p1 >> 5) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 5) & 2) | ((p1 >> 6) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
+				spriteVal = ((p2 >> 6) & 2) | ((p1 >> 7) & 1); if (spriteVal!=0) spriteVal += attribsAdd; *spritePtr++ = spriteVal;
 			}
 		}
 

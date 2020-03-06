@@ -110,7 +110,7 @@ static void runEmulationFrame()
 	updateNesInput();
 
 	for(scanline = 0; scanline < NES_screen_height; scanline++) {
-		if(!sprite_zero) {
+		if(!sprite_zero && scanline > 0) {
 			check_sprite_hit(scanline);
 		}
 
