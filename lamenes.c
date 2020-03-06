@@ -45,9 +45,6 @@
 #include "nes_input.h"
 #include "memory.h"
 
-#include "lib/str_chrchk.h"
-#include "lib/str_replace.h"
-
 // included mappers
 #include "mappers/mmc1.h"	// 1
 #include "mappers/unrom.h"	// 2
@@ -76,6 +73,7 @@ unsigned short NES_screen_width;
 unsigned short NES_screen_height;
 
 CCB *screenCel;
+uint16 palette3DO[NUM_PAL_COLORS];
 
 long romlen;
 

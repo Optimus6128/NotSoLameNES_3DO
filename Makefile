@@ -27,7 +27,7 @@ ARMLIB	= $(ARMDEV)lib
 ARMINC	= $(ARMDEV)inc
 
 SRC_S		= $(wildcard *.s)
-SRC_C		= $(wildcard *.c) $(wildcard lame6502/*.c) $(wildcard 3DO/*.c) $(wildcard lib/*.c)
+SRC_C		= $(wildcard *.c) $(wildcard lame6502/*.c) $(wildcard mappers/*.c) $(wildcard 3DO/*.c)
 
 OBJ	+= $(SRC_S:.s=.o)
 OBJ	+= $(SRC_C:.c=.o)
