@@ -48,6 +48,8 @@ unsigned char bgcache[256+8][240];
 unsigned char sprcache[256+8][240];
 unsigned char shouldCheckSprCache[240];
 
+uint32 tilemix[4][256][256];
+
 // ppu control registers
 unsigned int ppu_control1 = 0x00;
 unsigned int ppu_control2 = 0x00;
@@ -74,6 +76,24 @@ unsigned int ppu_bgscr_f = 0x00;
 
 // used to export the current scanline for the debugger
 int current_scanline;
+
+void init_ppu()
+{
+	int i,j,a,b;
+	for (a=0; a<4; ++a) {
+		for (i=0; i<256; ++i) {
+			for (j=0; j<256; ++j) {
+				uint32 *tilemixPtr = &tilemix[a][i][j];
+				for (b=0; b<8; ++b) {
+					int c = (((i >> (7-b)) & 1) << 1) | ((j >> (7-b)) & 1);
+					if (c!=0) c |= (a << 2);
+					*tilemixPtr = *tilemixPtr | (c << (28 - (b << 2)));
+				}
+				tilemixPtr++;
+			}
+		}
+	}
+}
 
 void write_ppu_memory(unsigned int address,unsigned char data)
 {	
@@ -253,9 +273,10 @@ void render_background(int scanline)
 
 	int pt_addr;
 
-	int attribs;
+	//int attribs;
 
 	uint16 *dst;
+	//uint32 *tilemixAttribOffset;
 
 	if (!background_on || (systemType == SYSTEM_NTSC && scanline < 8)) return;
 	
@@ -272,25 +293,12 @@ void render_background(int scanline)
 
 	nt_addr = 0x2000 + (loopyV & 0x0fff);
 	at_addr = 0x2000 + (loopyV & 0x0c00) + 0x03c0 + ((y_scroll & 0xfffc) << 1) + (x_scroll >> 2);
-
-	if((y_scroll & 0x0002) == 0) {
-		if((x_scroll & 0x0002) == 0) {
-			attribs = (ppu_memory[at_addr] & 0x03) << 2;
-		} else {
-			attribs = (ppu_memory[at_addr] & 0x0C);
-		}
-	} else {
-		if((x_scroll & 0x0002) == 0) {
-			attribs = (ppu_memory[at_addr] & 0x30) >> 2;
-		} else {
-			attribs = (ppu_memory[at_addr] & 0xC0) >> 4;
-		}
-	}
-
+	
 	// draw 33 tiles in a scanline (32 + 1 for scrolling)
-	//bgcachePtr = (uint8*)&bgcache[scanline][0];
 	for(tile_count = 0; tile_count < 33; tile_count++) {
-		int tile;
+		const int attribs = (ppu_memory[at_addr] >> (((y_scroll & 2) << 1) + (x_scroll & 2))) & 3;
+		const uint32 *tilemixAttribOffset = (uint32*)&tilemix[attribs];
+
 		// nt_data (ppu_memory[nt_addr]) * 16 = pattern table address
 		pt_addr = (ppu_memory[nt_addr] << 4) + ((loopyV & 0x7000) >> 12);
 
@@ -298,19 +306,21 @@ void render_background(int scanline)
 		if(background_addr_hi)
 			pt_addr+=0x1000;
 
+		
 		{
 			const int p1 = ppu_memory[pt_addr];
 			const int p2 = ppu_memory[pt_addr + 8];
 			const unsigned char *ppuSrc = &ppu_memory[0x3f00];
+			const uint32 tilemixNibbles = *(tilemixAttribOffset + (p2 << 8) + p1);
 
-			tile = (((p2 >> 6) & 2) | ((p1 >> 7) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
-			tile = (((p2 >> 5) & 2) | ((p1 >> 6) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
-			tile = (((p2 >> 4) & 2) | ((p1 >> 5) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
-			tile = (((p2 >> 3) & 2) | ((p1 >> 4) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
-			tile = (((p2 >> 2) & 2) | ((p1 >> 3) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
-			tile = (((p2 >> 1) & 2) | ((p1 >> 2) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
-			tile = (((p2 >> 0) & 2) | ((p1 >> 1) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
-			tile = (((p2 << 1) & 2) | ((p1 >> 0) & 1)); if (tile!=0) tile += attribs; *dst++ = palette3DO[ppuSrc[tile]];
+			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 28) & 15]];
+			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 24) & 15]];
+			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 20) & 15]];
+			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 16) & 15]];
+			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 12) & 15]];
+			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 8) & 15]];
+			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 4) & 15]];
+			*dst++ = palette3DO[ppuSrc[tilemixNibbles & 15]];
 		}
 
 		nt_addr++;
@@ -333,21 +343,6 @@ void render_background(int scanline)
 
 				at_addr++;
 			}
-
-			if((y_scroll & 0x0002) == 0) {
-				if((x_scroll & 0x0002) == 0) {
-					attribs = ((ppu_memory[at_addr]) & 0x03) << 2;
-				} else {
-					attribs = ((ppu_memory[at_addr]) & 0x0C);
-				}
-			} else {
-				if((x_scroll & 0x0002) == 0) {
-					attribs = ((ppu_memory[at_addr]) & 0x30) >> 2;
-				} else {
-					attribs = ((ppu_memory[at_addr]) & 0xC0) >> 4;
-				}
-			}
-
 		}
 	}
 

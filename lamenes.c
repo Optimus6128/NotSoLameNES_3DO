@@ -286,6 +286,8 @@ void initEmu()
 		NES_screen_height = NTSC_HEIGHT;
 	} else return;
 
+	init_ppu();
+
 	initNESscreenCEL();
 	initNESpal3DO();
 
