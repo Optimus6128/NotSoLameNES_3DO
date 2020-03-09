@@ -204,17 +204,19 @@ static void initNESpal3DO()
 
 void runEmu()
 {
-	mr_nohw = 0;
-	mr_hw = 0;
-	mr_0x2002 = 0;
-	mr_0x2007 = 0;
-	mr_0x4016 = 0;
-	mw_other = 0;
-	mw_ppu = 0;
-	mw_0x2002 = 0;
-	mw_0x4014 = 0;
-	mw_0x4016 = 0;
-	mw_mirror_low = 0;
+	if (DEBUG_MEM_FREQS) {
+		mr_nohw = 0;
+		mr_hw = 0;
+		mr_0x2002 = 0;
+		mr_0x2007 = 0;
+		mr_0x4016 = 0;
+		mw_other = 0;
+		mw_ppu = 0;
+		mw_0x2002 = 0;
+		mw_0x4014 = 0;
+		mw_0x4016 = 0;
+		mw_mirror_low = 0;
+	}
 	
 	// Frameskip to speed up things for testing
 	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
@@ -232,21 +234,23 @@ void runEmu()
 			runEmulationFrameOnly();	// No CPU update (to purely benchmark rendering)
 	}
 
-	drawNumber(0, 8, mr_nohw);		// 1000
-	drawNumber(0, 16, mr_hw);		// 1000
+	if (DEBUG_MEM_FREQS) {
+		drawNumber(0, 8, mr_nohw);		// 1000
+		drawNumber(0, 16, mr_hw);		// 1000
 
-	drawNumber(0, 32, mr_0x2002);	// 1000
-	drawNumber(0, 40, mr_0x2007);	// 0
-	drawNumber(0, 48, mr_0x4016);	// 8
+		drawNumber(0, 32, mr_0x2002);	// 1000
+		drawNumber(0, 40, mr_0x2007);	// 0
+		drawNumber(0, 48, mr_0x4016);	// 8
 
 
-	drawNumber(0, 64, mw_other);	// 650
-	drawNumber(0, 72, mw_ppu);		// 12
+		drawNumber(0, 64, mw_other);	// 650
+		drawNumber(0, 72, mw_ppu);		// 12
 
-	drawNumber(0, 88, mw_0x2002);	// 2000
-	drawNumber(0, 96, mw_0x4014);	// 1
-	drawNumber(0, 104, mw_0x4016);	// 2
-	drawNumber(0, 112, mw_mirror_low);	// 650
+		drawNumber(0, 88, mw_0x2002);	// 2000
+		drawNumber(0, 96, mw_0x4014);	// 1
+		drawNumber(0, 104, mw_0x4016);	// 2
+		drawNumber(0, 112, mw_mirror_low);	// 650
+	}
 }
 
 void initEmu()

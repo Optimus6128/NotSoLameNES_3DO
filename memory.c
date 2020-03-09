@@ -34,6 +34,7 @@
 #include "nes_input.h"
 #include "lame6502.h"
 #include "macros.h"
+#include "lamenes.h"
 
 char *savfile;
 char *statefile;
@@ -233,10 +234,10 @@ int mr_0x4016 = 0;
 unsigned char memory_read(unsigned int address) {
 	// this is ram or rom so we can return the address
 	if(address < 0x2000 || address > 0x7FFF) {
-        mr_nohw++;
+        if (DEBUG_MEM_FREQS) mr_nohw++;
 		return memory[address];
     } else {
-        mr_hw++;
+        if (DEBUG_MEM_FREQS) mr_hw++;
     }
 
 	// the addresses between 0x2000 and 0x5000 are for input/ouput
@@ -257,7 +258,7 @@ unsigned char memory_read(unsigned int address) {
 		// reset VRAM Address Register #2
 		ppu_addr_h = 0x00;
         
-        mr_0x2002++;
+        if (DEBUG_MEM_FREQS) mr_0x2002++;
 
 		// return bits 7-4 of unmodifyed ppu_status with bits 3-0 of the ppu_addr_tmp
 		return (ppu_status_tmp & 0xE0) | (ppu_addr_tmp & 0x1F);
@@ -272,7 +273,7 @@ unsigned char memory_read(unsigned int address) {
 		} else {
 			ppu_addr += 0x20;
 		}
-        mr_0x2007++;
+        if (DEBUG_MEM_FREQS) mr_0x2007++;
 
 		return ppu_memory[tmp];
 	}
@@ -327,7 +328,7 @@ unsigned char memory_read(unsigned int address) {
 			pad1_readcount = 0;
 			break;
 		}
-        mr_0x4016++;
+        if (DEBUG_MEM_FREQS) mr_0x4016++;
 	}
 
 	/*if(address == 0x4017) {
@@ -351,29 +352,38 @@ void write_memory(unsigned int address,unsigned char data)
 	// PPU Status
 	if(address == 0x2002) {
 		memory[address] = data;
-        mw_0x2002++;
+        if (DEBUG_MEM_FREQS) mw_0x2002++;
+		return;
+	}
+
+	// RAM registers
+	if(address < 0x800) {
+		memory[address] = data;
+		memory[address+2048] = data; // mirror of 0-0x800
+		memory[address+4096] = data; // mirror of 0-0x800
+		memory[address+6144] = data; // mirror of 0-0x800
+        if (DEBUG_MEM_FREQS) mw_mirror_low++;
 		return;
 	}
 
 	// PPU Video Memory area
 	if(address > 0x1fff && address < 0x4000) {
 		write_ppu_memory(address,data);
-        mw_ppu++;
+        if (DEBUG_MEM_FREQS) mw_ppu++;
 		return;
 	}
-	mw_other++;
 
 	// Sprite DMA Register
 	if(address == 0x4014) {
 		write_ppu_memory(address,data);
-        mw_0x4014++;
+        if (DEBUG_MEM_FREQS) mw_0x4014++;
 		return;
 	}
 
 	// Joypad 1
 	if(address == 0x4016) {
 		memory[address] = 0x40;
-        mw_0x4016++;
+        if (DEBUG_MEM_FREQS) mw_0x4016++;
 		return;
 	}
 
@@ -403,15 +413,7 @@ void write_memory(unsigned int address,unsigned char data)
 	}
 	*/
 
-	// RAM registers
-	if(address < 0x800) {
-		memory[address] = data;
-		memory[address+2048] = data; // mirror of 0-0x800
-		memory[address+4096] = data; // mirror of 0-0x800
-		memory[address+6144] = data; // mirror of 0-0x800
-        mw_mirror_low++;
-		return;
-	}
+	if (DEBUG_MEM_FREQS) mw_other++;
 
 	// Disable the mappers for now to optimize thing for the single ROM I am trying
 	// I will handle this whole memory_write/read calls in a more optimized way in the future anyway

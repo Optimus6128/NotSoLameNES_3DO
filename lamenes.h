@@ -34,6 +34,8 @@
 
 #include <graphics.h>
 
+#define DEBUG_MEM_FREQS 0
+
 enum {SYSTEM_NTSC, SYSTEM_PAL};
 
 extern char romfn[256];
