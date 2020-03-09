@@ -216,6 +216,15 @@ void runEmu()
 		mw_0x4014 = 0;
 		mw_0x4016 = 0;
 		mw_mirror_low = 0;
+
+		mw_ppu_0x2000 = 0;
+		mw_ppu_0x2001 = 0;
+		mw_ppu_0x2003 = 0;
+		mw_ppu_0x2004 = 0;
+		mw_ppu_0x2005 = 0;
+		mw_ppu_0x2006 = 0;
+		mw_ppu_0x2007 = 0;
+		mw_ppu_0x4014 = 0;
 	}
 	
 	// Frameskip to speed up things for testing
@@ -250,6 +259,15 @@ void runEmu()
 		drawNumber(0, 96, mw_0x4014);	// 1
 		drawNumber(0, 104, mw_0x4016);	// 2
 		drawNumber(0, 112, mw_mirror_low);	// 650
+
+		drawNumber(0, 152, mw_ppu_0x2000);
+		drawNumber(0, 160, mw_ppu_0x2001);
+		drawNumber(0, 168, mw_ppu_0x2003);
+		drawNumber(0, 176, mw_ppu_0x2004);
+		drawNumber(0, 184, mw_ppu_0x2005);
+		drawNumber(0, 192, mw_ppu_0x2006);
+		drawNumber(0, 200, mw_ppu_0x2007);
+		drawNumber(0, 208, mw_ppu_0x4014);
 	}
 }
 
