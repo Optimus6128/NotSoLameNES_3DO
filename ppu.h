@@ -49,6 +49,15 @@ extern unsigned int loopyT;
 extern unsigned int loopyV;
 extern unsigned int loopyX;
 
+extern int mw_ppu_0x2000;
+extern int mw_ppu_0x2001;
+extern int mw_ppu_0x2003;
+extern int mw_ppu_0x2004;
+extern int mw_ppu_0x2005;
+extern int mw_ppu_0x2006;
+extern int mw_ppu_0x2007;
+extern int mw_ppu_0x4014;
+
 void init_ppu();
 void show_gfxcache();
 void write_ppu_memory(unsigned int address,unsigned char data);

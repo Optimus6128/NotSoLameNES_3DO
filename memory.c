@@ -223,12 +223,21 @@ void save_state()
 	fprintf(stdout,"[*] done!\n");
 }*/
 
+int mr_nohw = 0;
+int mr_hw = 0;
+int mr_0x2002 = 0;
+int mr_0x2007 = 0;
+int mr_0x4016 = 0;
 
 // memory read handler
 unsigned char memory_read(unsigned int address) {
 	// this is ram or rom so we can return the address
-	if(address < 0x2000 || address > 0x7FFF)
+	if(address < 0x2000 || address > 0x7FFF) {
+        mr_nohw++;
 		return memory[address];
+    } else {
+        mr_hw++;
+    }
 
 	// the addresses between 0x2000 and 0x5000 are for input/ouput
 	if(address == 0x2002) {
@@ -247,6 +256,8 @@ unsigned char memory_read(unsigned int address) {
 
 		// reset VRAM Address Register #2
 		ppu_addr_h = 0x00;
+        
+        mr_0x2002++;
 
 		// return bits 7-4 of unmodifyed ppu_status with bits 3-0 of the ppu_addr_tmp
 		return (ppu_status_tmp & 0xE0) | (ppu_addr_tmp & 0x1F);
@@ -261,6 +272,7 @@ unsigned char memory_read(unsigned int address) {
 		} else {
 			ppu_addr += 0x20;
 		}
+        mr_0x2007++;
 
 		return ppu_memory[tmp];
 	}
@@ -315,6 +327,7 @@ unsigned char memory_read(unsigned int address) {
 			pad1_readcount = 0;
 			break;
 		}
+        mr_0x4016++;
 	}
 
 	/*if(address == 0x4017) {
@@ -324,6 +337,13 @@ unsigned char memory_read(unsigned int address) {
 	return memory[address];
 }
 
+int mw_ppu = 0;
+int mw_0x2002 = 0;
+int mw_0x4014 = 0;
+int mw_0x4016 = 0;
+int mw_mirror_low = 0;
+int mw_other = 0;
+
 // memory write handler
 void write_memory(unsigned int address,unsigned char data)
 {
@@ -331,25 +351,29 @@ void write_memory(unsigned int address,unsigned char data)
 	// PPU Status
 	if(address == 0x2002) {
 		memory[address] = data;
+        mw_0x2002++;
 		return;
 	}
 
 	// PPU Video Memory area
 	if(address > 0x1fff && address < 0x4000) {
 		write_ppu_memory(address,data);
+        mw_ppu++;
 		return;
 	}
+	mw_other++;
 
 	// Sprite DMA Register
 	if(address == 0x4014) {
 		write_ppu_memory(address,data);
+        mw_0x4014++;
 		return;
 	}
 
 	// Joypad 1
 	if(address == 0x4016) {
 		memory[address] = 0x40;
-
+        mw_0x4016++;
 		return;
 	}
 
@@ -385,6 +409,7 @@ void write_memory(unsigned int address,unsigned char data)
 		memory[address+2048] = data; // mirror of 0-0x800
 		memory[address+4096] = data; // mirror of 0-0x800
 		memory[address+6144] = data; // mirror of 0-0x800
+        mw_mirror_low++;
 		return;
 	}
 

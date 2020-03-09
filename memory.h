@@ -40,6 +40,19 @@ extern unsigned char memory[CPU_MEMORY];
 extern unsigned char ppu_memory[PPU_MEMORY];
 extern unsigned char sprite_memory[SPRITE_MEMORY];
 
+extern int mr_nohw;
+extern int mr_hw;
+extern int mr_0x2002;
+extern int mr_0x2007;
+extern int mr_0x4016;
+
+extern int mw_ppu;
+extern int mw_0x2002;
+extern int mw_0x4014;
+extern int mw_0x4016;
+extern int mw_mirror_low;
+extern int mw_other;
+
 unsigned char memory_read(unsigned int address);
 void write_memory(unsigned int address,unsigned char data);
 

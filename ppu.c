@@ -95,6 +95,15 @@ void init_ppu()
 	}
 }
 
+int mw_ppu_0x2000 = 0;
+int mw_ppu_0x2001 = 0;
+int mw_ppu_0x2003 = 0;
+int mw_ppu_0x2004 = 0;
+int mw_ppu_0x2005 = 0;
+int mw_ppu_0x2006 = 0;
+int mw_ppu_0x2007 = 0;
+int mw_ppu_0x4014 = 0;
+
 void write_ppu_memory(unsigned int address,unsigned char data)
 {	
 	int i;
@@ -106,9 +115,9 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 
 		memory[address] = data;
 
-		loopyT &= 0xf3ff; // (0000110000000000)
+		loopyT &= 0xf3ff; // ~(0000110000000000)
 		loopyT |= (data & 3) << 10; // (00000011)
-
+        mw_ppu_0x2000++;
 		return;
     }
 
@@ -117,7 +126,7 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 
 		ppu_control2 = data;
 		memory[address] = data;
-
+        mw_ppu_0x2001++;
 		return;
     }
 
@@ -127,7 +136,7 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 
 		sprite_address = data;
 		memory[address] = data;
-
+        mw_ppu_0x2003++;
 		return;
 	}
 
@@ -137,7 +146,7 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 
 		sprite_memory[sprite_address] = data;
 		sprite_address++;
-
+        mw_ppu_0x2004++;
 		memory[address] = data;
 		return;
 	}
@@ -145,7 +154,7 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 	// vram address register #1 (scrolling)
 	if(address == 0x2005) {
 		ppu_addr_tmp = data;
-
+        mw_ppu_0x2005++;
 		if(ppu_bgscr_f == 0x00) {
 			loopyT &= 0xFFE0; // (0000000000011111)
 			loopyT |= (data & 0xF8) >> 3; // (11111000)
@@ -175,7 +184,7 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 	// vram address register #2
 	if(address == 0x2006) {
 		ppu_addr_tmp = data;
-
+        mw_ppu_0x2006++;
 		// First write -> Store the high byte 6 bits and clear out the last two
 		if(ppu_addr_h == 0x00) {
 			ppu_addr = (data << 8);
@@ -209,6 +218,7 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 	// vram i/o register
 	if(address == 0x2007) {
 		// if the vram_write_flag is on, vram writes should ignored 
+        mw_ppu_0x2007++;
 		if(vram_write_flag)
 			return;
 
@@ -252,10 +262,11 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 	}
 
 	// transfer 256 bytes of memory into sprite_memory
-        if(address == 0x4014) {
+    if(address == 0x4014) {
 		for(i = 0; i < 256; i++) {
 			sprite_memory[i] = memory[0x100 * data + i];
 		}
+        mw_ppu_0x4014++;
 	}
 
 	return;
