@@ -49,6 +49,7 @@ unsigned char sprcache[256+8][240];
 unsigned char shouldCheckSprCache[240];
 
 uint32 tilemix[4][256][256];
+uint32 xy_scroll_tab[2][64];
 
 // ppu control registers
 unsigned int ppu_control1 = 0x00;
@@ -91,6 +92,12 @@ void init_ppu()
 				}
 				tilemixPtr++;
 			}
+		}
+	}
+
+	for (j=0; j<2; ++j) {
+		for (i=0; i<64; ++i) {
+			xy_scroll_tab[j][i] = (j << 2) + (i & 2);
 		}
 	}
 }
@@ -281,6 +288,7 @@ void render_background(int scanline)
 
 	int x_scroll;
 	int y_scroll;
+	uint32 *xy_scroll_pair;
 
 	int pt_addr;
 
@@ -303,57 +311,47 @@ void render_background(int scanline)
 	y_scroll = (loopyV & 0x03e0) >> 5;
 
 	nt_addr = 0x2000 + (loopyV & 0x0fff);
-	at_addr = 0x2000 + (loopyV & 0x0c00) + 0x03c0 + ((y_scroll & 0xfffc) << 1) + (x_scroll >> 2);
+	at_addr = 0x2000 + (loopyV & 0x0c00) + 0x03c0 + ((y_scroll & 0xfffc) << 1);
 	
 	// draw 33 tiles in a scanline (32 + 1 for scrolling)
+	xy_scroll_pair = (uint32*)&xy_scroll_tab[(y_scroll >> 1) & 1][x_scroll];
 	for(tile_count = 0; tile_count < 33; tile_count++) {
-		const int attribs = (ppu_memory[at_addr] >> (((y_scroll & 2) << 1) + (x_scroll & 2))) & 3;
+		const int at_addr_off = at_addr + (x_scroll >> 2);
+		
+		const int attribs = (ppu_memory[at_addr_off] >> *xy_scroll_pair++) & 3;
 		const uint32 *tilemixAttribOffset = (uint32*)&tilemix[attribs];
 
-		// nt_data (ppu_memory[nt_addr]) * 16 = pattern table address
 		pt_addr = (ppu_memory[nt_addr] << 4) + ((loopyV & 0x7000) >> 12);
 
 		// check if the pattern address needs to be high
 		if(background_addr_hi)
 			pt_addr+=0x1000;
 
-		
 		{
 			const int p1 = ppu_memory[pt_addr];
 			const int p2 = ppu_memory[pt_addr + 8];
 			const unsigned char *ppuSrc = &ppu_memory[0x3f00];
 			const uint32 tilemixNibbles = *(tilemixAttribOffset + (p2 << 8) + p1);
 
-			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 28) & 15]];
-			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 24) & 15]];
-			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 20) & 15]];
-			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 16) & 15]];
-			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 12) & 15]];
-			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 8) & 15]];
-			*dst++ = palette3DO[ppuSrc[(tilemixNibbles >> 4) & 15]];
-			*dst++ = palette3DO[ppuSrc[tilemixNibbles & 15]];
+			*dst = palette3DO[ppuSrc[(tilemixNibbles >> 28) & 15]];
+			*(dst+1) = palette3DO[ppuSrc[(tilemixNibbles >> 24) & 15]];
+			*(dst+2) = palette3DO[ppuSrc[(tilemixNibbles >> 20) & 15]];
+			*(dst+3) = palette3DO[ppuSrc[(tilemixNibbles >> 16) & 15]];
+			*(dst+4) = palette3DO[ppuSrc[(tilemixNibbles >> 12) & 15]];
+			*(dst+5) = palette3DO[ppuSrc[(tilemixNibbles >> 8) & 15]];
+			*(dst+6) = palette3DO[ppuSrc[(tilemixNibbles >> 4) & 15]];
+			*(dst+7) = palette3DO[ppuSrc[tilemixNibbles & 15]];
+			dst += 8;
 		}
 
 		nt_addr++;
-		x_scroll++;
-
-		// boundary check
-		// dual-tile
-		if((x_scroll & 0x0001) == 0) {
-			// quad-tile
-			if((x_scroll & 0x0003) == 0) {
-				// check if we crossed a nametable
-				if((x_scroll & 0x1F) == 0) {
-					// switch name/attrib tables
-					nt_addr ^= 0x0400;
-					at_addr ^= 0x0400;
-					nt_addr -= 0x0020;
-					at_addr -= 0x0008;
-					x_scroll -= 0x0020;
-				}
-
-				at_addr++;
-			}
+		x_scroll = (x_scroll + 1) & 0x1F;
+		// check if we crossed a nametable
+		if(x_scroll == 0) {
+			// switch name/attrib tables
+			nt_addr ^= 0x0400;
+			at_addr ^= 0x0400;
+			nt_addr -= 0x0020;
 		}
 	}
 
