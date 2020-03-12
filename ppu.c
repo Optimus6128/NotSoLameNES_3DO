@@ -427,6 +427,8 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 		}
 	}
 
+	// account for 0-7 scroll X offset of background (not done anymore inside background rendering but outside with CEL flags)
+	x += loopyX;
 
 	dst = (uint16*)screenCel->ccb_SourcePtr + y * screenCel->ccb_Width + x;
 

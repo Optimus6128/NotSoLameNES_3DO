@@ -81,6 +81,14 @@ long romlen;
 int frameskipNum = 0;
 bool skipBackgroundRendering = false;
 
+static void updateSmoothScrolling()
+{
+	const uint32 scrollX = loopyX & 7;
+
+	screenCel->ccb_PRE0 = (screenCel->ccb_PRE0 & ~(255U << 24)) | (scrollX << 24);
+	screenCel->ccb_PRE1 = (screenCel->ccb_PRE1 & ~PRE1_TLHPCNT_MASK) | (NES_screen_width + scrollX - 1);
+}
+
 static void runEmulationFrame()
 {
 	static int frame = 0;
@@ -133,8 +141,10 @@ static void runEmulationFrame()
 		}
 	}
 
-	if (!skipThisFrame)
+	if (!skipThisFrame) {
 		render_sprites();
+		updateSmoothScrolling();
+	}
 
 	// Draw Screen
 	drawCels(screenCel);
@@ -144,26 +154,6 @@ static void runEmulationFrame()
 	}*/
 
 	frame = (frame + 1) % (frameskipNum + 1);
-}
-
-static void runEmulationFrameOnly()
-{
-	unsigned short scanline = 0;
-
-	updateNesInput();
-
-	for(scanline = 0; scanline < NES_screen_height; scanline++) {
-		if(!sprite_zero && scanline > 0) {
-			check_sprite_hit(scanline);
-		}
-
-		render_background(scanline);
-	}
-
-	render_sprites();
-
-	// Draw Screen
-	drawCels(screenCel);
 }
 
 /*static void reset_emulation()
@@ -237,10 +227,7 @@ void runEmu()
 	skipBackgroundRendering = isJoyButtonPressed(JOY_BUTTON_RPAD);
 
 	if (!pause_emulation) {
-		if (!isJoyButtonPressed(JOY_BUTTON_LPAD))
-			runEmulationFrame();
-		else
-			runEmulationFrameOnly();	// No CPU update (to purely benchmark rendering)
+		runEmulationFrame();
 	}
 
 	if (DEBUG_MEM_FREQS) {
