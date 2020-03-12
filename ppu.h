@@ -41,8 +41,6 @@ extern unsigned int ppu_status;
 extern unsigned int ppu_status_tmp;
 extern unsigned int ppu_bgscr_f;
 
-extern int current_scanline;
-
 extern unsigned int sprite_address;
 
 extern unsigned int loopyT;

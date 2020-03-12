@@ -44,6 +44,7 @@ extern unsigned char *romcache;
 
 extern int systemType;
 extern CCB *screenCel;
+extern int scrollRowX[32];
 
 extern unsigned char CPU_is_running;
 extern unsigned char pause_emulation;

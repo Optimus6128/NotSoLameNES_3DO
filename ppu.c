@@ -75,9 +75,6 @@ unsigned int sprite_address = 0x00;
 // used to flip between first and second write (0x2005)
 unsigned int ppu_bgscr_f = 0x00;
 
-// used to export the current scanline for the debugger
-int current_scanline;
-
 void init_ppu()
 {
 	int i,j,a,b;
@@ -301,8 +298,6 @@ void render_background(int scanline)
 	
 	dst = (uint16*)screenCel->ccb_SourcePtr + scanline * screenCel->ccb_Width;
 
-	current_scanline = scanline;
-
 	// loopy scanline start -> v:0000010000011111=t:0000010000011111 | v=t
 	loopyV &= 0xfbe0;
 	loopyV |= (loopyT & 0x041f);
@@ -427,10 +422,7 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 		}
 	}
 
-	// account for 0-7 scroll X offset of background (not done anymore inside background rendering but outside with CEL flags)
-	x += loopyX;
-
-	dst = (uint16*)screenCel->ccb_SourcePtr + y * screenCel->ccb_Width + x;
+	dst = (uint16*)screenCel->ccb_SourcePtr + y * screenCel->ccb_Width;
 
 	if(!sprite_16) {
 		int spriteVal;
@@ -494,8 +486,11 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 
 		spritePtr = (unsigned char*)sprite;
 		for(j = 0; j < 8; j++) {
-			unsigned char *sprcachePtr = (unsigned char*)&sprcache[y+j][x];
-			unsigned short *bgcachePtr = dst + j * screenCel->ccb_Width;
+			// account for 0-7 scroll X offset of background row
+			const int xp = x + scrollRowX[((y+j) >> 3) & 31];
+			unsigned char *sprcachePtr = (unsigned char*)&sprcache[y+j][xp];
+			unsigned short *bgPtr = dst + xp;
+
 			for(i = 0; i < 8; i++) {
 				// cache pixel for sprite zero detection
 				const unsigned char value = *spritePtr++;
@@ -505,11 +500,11 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 				if(value != 0) {
 					// sprite priority check
 					if(!disp_spr_back) {
-						*(dst + i) = palette3DO[ppu_memory[0x3f10 + value]];
+						*(bgPtr + i) = palette3DO[ppu_memory[0x3f10 + value]];
 					} else {
 						// draw the sprite pixel if the background pixel is transparent (0)
-						if(*bgcachePtr++ == 0) {
-							*(dst + i) = palette3DO[ppu_memory[0x3f10 + value]];
+						if(*(bgPtr + i) == 0) {
+							*(bgPtr + i) = palette3DO[ppu_memory[0x3f10 + value]];
 						}
 					}
 				}
@@ -556,8 +551,11 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 
 		spritePtr = (unsigned char*)sprite;
 		for(j = 0; j < 16; j++) {
-			unsigned char *sprcachePtr = (unsigned char*)&sprcache[y+j][x];
-			unsigned short *bgcachePtr = dst + j * screenCel->ccb_Width;
+			// account for 0-7 scroll X offset of background row
+			const int xp = x + scrollRowX[((y+j) >> 3) & 31];
+			unsigned char *sprcachePtr = (unsigned char*)&sprcache[y+j][xp];
+			unsigned short *bgPtr = dst + xp;
+
 			for(i = 0; i < 8; i++) {
 				// cache pixel for sprite zero detection
 				const unsigned char value = *spritePtr++;
@@ -567,11 +565,11 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 				if(value != 0) {
 					// sprite priority check
 					if(!disp_spr_back) {
-						*(dst + i) = palette3DO[ppu_memory[0x3f10 + value]];
+						*(bgPtr + i) = palette3DO[ppu_memory[0x3f10 + value]];
 					} else {
 						// draw the sprite pixel if the background pixel is transparent (0)
-						if(*bgcachePtr++ == 0) {
-							*(dst + i) = palette3DO[ppu_memory[0x3f10 + value]];
+						if(*(bgPtr + i) == 0) {
+							*(bgPtr + i) = palette3DO[ppu_memory[0x3f10 + value]];
 						}
 					}
 				}

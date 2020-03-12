@@ -74,6 +74,8 @@ unsigned short NES_screen_width;
 unsigned short NES_screen_height;
 
 CCB *screenCel;
+CCB *screenRowCel[32];
+int scrollRowX[32];
 uint16 palette3DO[NUM_PAL_COLORS];
 
 long romlen;
@@ -81,12 +83,55 @@ long romlen;
 int frameskipNum = 0;
 bool skipBackgroundRendering = false;
 
+
+static void initNESscreenCELs()
+{
+	int y;
+	const uint32 width = NES_screen_width + 8;
+	const uint32 height = NES_screen_height + 8;
+
+	screenCel = CreateCel(width, height, 16, CREATECEL_UNCODED, NULL);
+	screenCel->ccb_Flags |= (CCB_LAST | CCB_BGND);
+	screenCel->ccb_XPos = 32 << 16;
+
+	for (y=0; y<32; ++y) {
+		screenRowCel[y] = CreateCel(width, 8, 16, CREATECEL_UNCODED, (uint16*)screenCel->ccb_SourcePtr + y * width * 8);
+		screenRowCel[y]->ccb_XPos = screenCel->ccb_XPos;
+		screenRowCel[y]->ccb_YPos = (y * 8) << 16;
+		screenRowCel[y]->ccb_Flags = screenCel->ccb_Flags & ~CCB_LAST;
+		if (y!=0) LinkCel(screenRowCel[y-1], screenRowCel[y]);
+	}
+	screenRowCel[31]->ccb_Flags |= CCB_LAST;
+}
+
+static void initNESpal3DO()
+{
+	int i;
+	for (i=0; i<64; ++i) {
+		palette3DO[i] = MAKE_NES_TO_3DO_PAL(palette[i].r, palette[i].g, palette[i].b);
+	}
+}
+
+static void updateSmoothScrollingRow(int charLine)
+{
+	const uint32 scrollX = scrollRowX[charLine] & 7;
+	CCB *rowCel = screenRowCel[charLine];
+
+	rowCel->ccb_PRE0 = (rowCel->ccb_PRE0 & ~(255U << 24)) | (scrollX << 24);
+	rowCel->ccb_PRE1 = (rowCel->ccb_PRE1 & ~PRE1_TLHPCNT_MASK) | (NES_screen_width + scrollX - 1);
+}
+
 static void updateSmoothScrolling()
 {
-	const uint32 scrollX = loopyX & 7;
+	int y;
+	for (y=0; y<32; ++y) {
+		updateSmoothScrollingRow(y);
+	}
+}
 
-	screenCel->ccb_PRE0 = (screenCel->ccb_PRE0 & ~(255U << 24)) | (scrollX << 24);
-	screenCel->ccb_PRE1 = (screenCel->ccb_PRE1 & ~PRE1_TLHPCNT_MASK) | (NES_screen_width + scrollX - 1);
+static void drawNESscreenCELs()
+{
+	drawCels(screenRowCel[0]);
 }
 
 static void runEmulationFrame()
@@ -122,14 +167,18 @@ static void runEmulationFrame()
 	loopyV = loopyT;
 
 	updateNesInput();
-	
+
 	for(scanline = 0; scanline < NES_screen_height; scanline++) {
 		if(!sprite_zero && scanline > 0) {
 			check_sprite_hit(scanline);
 		}
 
-		if (!skipThisFrame)
+		if (!skipThisFrame) {
+			if ((scanline & 7) == 0) {
+				scrollRowX[scanline >> 3] = loopyX & 7;
+			}
 			render_background(scanline);
+		}
 
 		counter += CPU_execute(scanline_refresh);
 
@@ -147,7 +196,7 @@ static void runEmulationFrame()
 	}
 
 	// Draw Screen
-	drawCels(screenCel);
+	drawNESscreenCELs();
 
 	/*if(!interrupt_flag) {
 		counter += IRQ(counter);
@@ -176,21 +225,6 @@ static void runEmulationFrame()
 	runEmulationFrame();
 }*/
 
-static void initNESscreenCEL()
-{
-	screenCel = CreateCel(NES_screen_width + 8, NES_screen_height + 16, 16, CREATECEL_UNCODED, NULL);
-	screenCel->ccb_Flags |= (CCB_LAST | CCB_BGND);
-	screenCel->ccb_XPos = 32 << 16;
-	screenCel->ccb_PRE1 = (screenCel->ccb_PRE1 &= ~PRE1_TLHPCNT_MASK) | (NES_screen_width - 1);
-}
-
-static void initNESpal3DO()
-{
-	int i;
-	for (i=0; i<64; ++i) {
-		palette3DO[i] = MAKE_NES_TO_3DO_PAL(palette[i].r, palette[i].g, palette[i].b);
-	}
-}
 
 void runEmu()
 {
@@ -326,7 +360,7 @@ void initEmu()
 
 	init_ppu();
 
-	initNESscreenCEL();
+	initNESscreenCELs();
 	initNESpal3DO();
 
 	// first reset the cpu at poweron
