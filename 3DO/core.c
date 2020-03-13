@@ -31,6 +31,7 @@ static void initGraphicsOptions(uint32 flags)
 	initGraphics(numVramBuffers, numOffscreenBuffers, horizontalAntialiasing, verticalAntialiasing);
 
 	if (flags & CORE_NO_VSYNC) setVsync(false);
+	if (flags & CORE_NO_CLEAR_FRAME) setClearFrame(false);
 }
 
 void coreInit(void(*initFunc)(), uint32 flags)

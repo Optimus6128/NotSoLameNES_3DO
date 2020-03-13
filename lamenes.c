@@ -253,8 +253,15 @@ void runEmu()
 	
 	// Frameskip to speed up things for testing
 	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
+		int i;
 		frameskipNum = (frameskipNum + 1) & 3;
-		setBackgroundColor((frameskipNum + 1) * (frameskipNum + 2));
+		for (i=0; i<frameskipNum; ++i) {
+			int c = i + 1;
+			drawThickPixel(2*(i+1), 116, MakeRGB15(7 + (c << 3), 3 + (c << 2), c << 1));
+		}
+		for (i=frameskipNum; i<3; ++i) {
+			drawThickPixel(2*(i+1), 116, 0);
+		}
 	}
 
 	// No rendering emulation (to purely benchmark CPU)
@@ -384,6 +391,6 @@ void initEmu()
 
 int main()
 {
-	coreInit(initEmu, CORE_SHOW_FPS | CORE_NO_VSYNC);
+	coreInit(initEmu, CORE_VRAM_SINGLEBUFFER | CORE_SHOW_FPS | CORE_NO_CLEAR_FRAME | CORE_NO_VSYNC);
 	coreRun(runEmu);
 }

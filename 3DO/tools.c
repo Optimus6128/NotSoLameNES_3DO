@@ -80,7 +80,7 @@ void initFonts()
 		textCel[i]->ccb_VDX = 0 << 16;
 		textCel[i]->ccb_VDY = 1 << 16;
 
-		textCel[i]->ccb_Flags |= (CCB_ACSC | CCB_ALSC);
+		textCel[i]->ccb_Flags |= (CCB_ACSC | CCB_ALSC | CCB_BGND);
 
 		if (i > 0) LinkCel(textCel[i-1], textCel[i]);
 	}
@@ -128,7 +128,7 @@ void drawText(int xtp, int ytp, char *text)
 
 void drawNumber(int xtp, int ytp, int num)
 {
-	sprintf(sbuffer, "%d", num);	// investigate and see if we can replace sprintf for numbers (I have encountered possible performance drawback for many (80) values per frame)
+	sprintf(sbuffer, "%d  ", num);	// investigate and see if we can replace sprintf for numbers (I have encountered possible performance drawback for many (80) values per frame)
 	drawText(xtp, ytp, sbuffer);
 }
 

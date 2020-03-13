@@ -44,7 +44,6 @@
 #include "memory.h"
 
 // gfx cache -> [hor][ver]
-unsigned char bgcache[256+8][240];
 unsigned char sprcache[256+8][240];
 unsigned char shouldCheckSprCache[240];
 
