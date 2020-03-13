@@ -289,12 +289,10 @@ void render_background(int scanline)
 
 	int pt_addr;
 
-	//int attribs;
-
 	uint16 *dst;
-	//uint32 *tilemixAttribOffset;
 
 	if (!background_on || (systemType == SYSTEM_NTSC && scanline < 8)) return;
+	if (systemType == SYSTEM_NTSC) scanline -= 8;
 	
 	dst = (uint16*)screenCel->ccb_SourcePtr + scanline * screenCel->ccb_Width;
 
