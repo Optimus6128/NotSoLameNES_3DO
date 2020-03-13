@@ -581,11 +581,10 @@ void check_sprite_hit(int scanline)
 {
 	// sprite zero detection
 	int i;
-	//uint8 *bgcachePtr = (uint8*)&bgcache[scanline-1][0];
 	uint16 *bgcachePtr = (uint16*)screenCel->ccb_SourcePtr + (scanline-1) * screenCel->ccb_Width;
 	uint8 *sprcachePtr = (uint8*)&sprcache[scanline-1][0];
 	
-	if (!shouldCheckSprCache[scanline]) return;
+	if (!shouldCheckSprCache[scanline-6]) return;	// temporary hack (used to be scanline or scanline-1) to make the super mario score board not break, will investigate later why
 
 	for(i = 0; i < NES_screen_width; i++) {
 		if((bgcachePtr[i] | sprcachePtr[i])!=0) {
