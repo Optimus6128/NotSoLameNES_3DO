@@ -36,7 +36,7 @@
 
 #define DEBUG_MEM_FREQS 0
 
-//#define PER_CHARLINE_RENDERER
+#define PER_CHARLINE_RENDERER
 
 enum {SYSTEM_NTSC, SYSTEM_PAL};
 
@@ -47,7 +47,7 @@ extern unsigned char *romcache;
 extern int systemType;
 extern CCB *screenCel;
 extern int scrollRowX[32];
-extern uint16 palette3DO[64];
+extern uint16 palette3DO[256];
 
 extern unsigned char CPU_is_running;
 extern unsigned char pause_emulation;

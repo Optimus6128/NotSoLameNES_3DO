@@ -290,16 +290,14 @@ void render_background(int scanline)
 	int pt_addr;
 
 	uint16 *dst;
-	const uint32 screenCelWidth = screenCel->ccb_Width;
-	static uint16 palmap[16];
 	static uint32 palmap32[256];
-	const uint16 *palSrc = palmap;
 	const uint32 *palSrc32 = (uint32*)palmap32;
+	const uint32 screenCelWidthInDwords = screenCel->ccb_Width >> 1;
 
 	if (!background_on || (systemType == SYSTEM_NTSC && scanline < 8)) return;
 	if (systemType == SYSTEM_NTSC) scanline -= 8;
 	
-	dst = (uint16*)screenCel->ccb_SourcePtr + scanline * screenCelWidth;
+	dst = (uint16*)screenCel->ccb_SourcePtr + scanline * screenCel->ccb_Width;
 
 	// loopy scanline start -> v:0000010000011111=t:0000010000011111 | v=t
 	loopyV &= 0xfbe0;
@@ -346,7 +344,7 @@ void render_background(int scanline)
 		#ifdef PER_CHARLINE_RENDERER
 		{
 			uint32 *bp = (uint32*)&ppu_memory[pt_addr];
-			uint16 *dstc = dst;
+			uint32 *dstc32 = (uint32*)dst;
 
 			for (i=0; i<2; ++i) {
 				const uint32 up2 = *(bp+2);
@@ -354,54 +352,38 @@ void render_background(int scanline)
 
 				{
 					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 >> 16) & 0xFF00) + (up1 >> 24));
-					*dstc = palSrc[(tilemixNibbles >> 28) & 15];
-					*(dstc+1) = palSrc[(tilemixNibbles >> 24) & 15];
-					*(dstc+2) = palSrc[(tilemixNibbles >> 20) & 15];
-					*(dstc+3) = palSrc[(tilemixNibbles >> 16) & 15];
-					*(dstc+4) = palSrc[(tilemixNibbles >> 12) & 15];
-					*(dstc+5) = palSrc[(tilemixNibbles >> 8) & 15];
-					*(dstc+6) = palSrc[(tilemixNibbles >> 4) & 15];
-					*(dstc+7) = palSrc[tilemixNibbles & 15];
-					dstc += screenCelWidth;
+					*dstc32 = palSrc32[tilemixNibbles >> 24];
+					*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
+					*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
+					*(dstc32+3) = palSrc32[tilemixNibbles & 255];
+					dstc32 += screenCelWidthInDwords;
 				}
 
 				{
 					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 >> 8) & 0xFF00) + ((up1 >> 16) & 0xFF));
-					*dstc = palSrc[(tilemixNibbles >> 28) & 15];
-					*(dstc+1) = palSrc[(tilemixNibbles >> 24) & 15];
-					*(dstc+2) = palSrc[(tilemixNibbles >> 20) & 15];
-					*(dstc+3) = palSrc[(tilemixNibbles >> 16) & 15];
-					*(dstc+4) = palSrc[(tilemixNibbles >> 12) & 15];
-					*(dstc+5) = palSrc[(tilemixNibbles >> 8) & 15];
-					*(dstc+6) = palSrc[(tilemixNibbles >> 4) & 15];
-					*(dstc+7) = palSrc[tilemixNibbles & 15];
-					dstc += screenCelWidth;
+					*dstc32 = palSrc32[tilemixNibbles >> 24];
+					*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
+					*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
+					*(dstc32+3) = palSrc32[tilemixNibbles & 255];
+					dstc32 += screenCelWidthInDwords;
 				}
 
 				{
 					const uint32 tilemixNibbles = *(tilemixAttribOffset + (up2 & 0xFF00) + ((up1 >> 8) & 0xFF));
-					*dstc = palSrc[(tilemixNibbles >> 28) & 15];
-					*(dstc+1) = palSrc[(tilemixNibbles >> 24) & 15];
-					*(dstc+2) = palSrc[(tilemixNibbles >> 20) & 15];
-					*(dstc+3) = palSrc[(tilemixNibbles >> 16) & 15];
-					*(dstc+4) = palSrc[(tilemixNibbles >> 12) & 15];
-					*(dstc+5) = palSrc[(tilemixNibbles >> 8) & 15];
-					*(dstc+6) = palSrc[(tilemixNibbles >> 4) & 15];
-					*(dstc+7) = palSrc[tilemixNibbles & 15];
-					dstc += screenCelWidth;
+					*dstc32 = palSrc32[tilemixNibbles >> 24];
+					*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
+					*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
+					*(dstc32+3) = palSrc32[tilemixNibbles & 255];
+					dstc32 += screenCelWidthInDwords;
 				}
 
 				{
 					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 << 8) & 0xFF00) + (up1 & 0xFF));
-					*dstc = palSrc[(tilemixNibbles >> 28) & 15];
-					*(dstc+1) = palSrc[(tilemixNibbles >> 24) & 15];
-					*(dstc+2) = palSrc[(tilemixNibbles >> 20) & 15];
-					*(dstc+3) = palSrc[(tilemixNibbles >> 16) & 15];
-					*(dstc+4) = palSrc[(tilemixNibbles >> 12) & 15];
-					*(dstc+5) = palSrc[(tilemixNibbles >> 8) & 15];
-					*(dstc+6) = palSrc[(tilemixNibbles >> 4) & 15];
-					*(dstc+7) = palSrc[tilemixNibbles & 15];
-					dstc += screenCelWidth;
+					*dstc32 = palSrc32[tilemixNibbles >> 24];
+					*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
+					*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
+					*(dstc32+3) = palSrc32[tilemixNibbles & 255];
+					dstc32 += screenCelWidthInDwords;
 				}
 			}
 			dst += 8;
@@ -411,13 +393,12 @@ void render_background(int scanline)
 			const uint32 p1 = ppu_memory[pt_addr];
 			const uint32 p2 = ppu_memory[pt_addr + 8];
 			const uint32 tilemixNibbles = *(tilemixAttribOffset + (p2 << 8) + p1);
-			uint32 *dst32 = (uint32*)dst;
 
-			*dst32 = palSrc32[(tilemixNibbles >> 24) & 255];
+			uint32 *dst32 = (uint32*)dst;
+			*dst32 = palSrc32[tilemixNibbles >> 24];
 			*(dst32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
 			*(dst32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
 			*(dst32+3) = palSrc32[tilemixNibbles & 255];
-
 			dst += 8;
 		}
 		#endif

@@ -76,7 +76,7 @@ unsigned short NES_screen_height;
 CCB *screenCel;
 CCB *screenRowCel[32];
 int scrollRowX[32];
-uint16 palette3DO[NUM_PAL_COLORS];
+uint16 palette3DO[256];
 
 long romlen;
 
@@ -107,8 +107,8 @@ static void initNESscreenCELs()
 static void initNESpal3DO()
 {
 	int i;
-	for (i=0; i<64; ++i) {
-		palette3DO[i] = MAKE_NES_TO_3DO_PAL(palette[i].r, palette[i].g, palette[i].b);
+	for (i=0; i<256; ++i) {
+		palette3DO[i] = MAKE_NES_TO_3DO_PAL(palette[i & 63].r, palette[i & 63].g, palette[i & 63].b);
 	}
 }
 
