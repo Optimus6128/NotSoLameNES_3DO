@@ -182,12 +182,22 @@ static void runEmulationFrame()
 				if (y > 0) check_sprite_hit(y);
 			}
 		}
-
+		
 		if (!skipThisFrame) {
 			if ((scanline & 7) == 0) {
 				scrollRowX[scanline >> 3] = loopyX & 7;
 			}
-			render_background(scanline);
+
+			if (scanline == 0) updatePalmap32();
+			//if ((scanline & 7) == 0) updatePalmap32();
+			//if ((scanline & 15) == 0) updatePalmap32();
+
+			update_scanline_values(scanline, lineStep);
+
+			// We may not need the second check. Either a lame hack to position screen or it actually does have to do with different NES timings
+			if (background_on && !(systemType == SYSTEM_NTSC && scanline < 8)) {
+				render_background(scanline);
+			}
 		}
 
 		counter += CPU_execute(lineStep*scanline_refresh);

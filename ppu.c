@@ -48,6 +48,7 @@ unsigned char shouldCheckSprCache[240];
 
 uint32 tilemix[4][256][256];
 uint32 xy_scroll_tab[2][64];
+uint32 palmap32[256];
 
 // ppu control registers
 unsigned int ppu_control1 = 0x00;
@@ -63,6 +64,8 @@ unsigned int ppu_addr_tmp = 0x2000;
 unsigned int loopyT = 0x00;
 unsigned int loopyV = 0x00;
 unsigned int loopyX = 0x00;
+
+uint32 loopyVtab[240];
 
 // ppu status/temp registers
 unsigned int ppu_status;
@@ -276,6 +279,63 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 	return;
 }
 
+void updatePalmap32()
+{
+	// It's possible colors will break in some games if we don't do this every scanline or char line
+	// I can optimize it or detect if those palette entries change by the CPU at a specific line in the future and only then do this 256 values copy.
+	// Right now I do it once per frame and super mario doesn't break at least
+	int i, j, n = 0;
+	for (j=0; j<16; ++j) {
+		int bit16j = BIT_16;
+		if ((j & 3) == 0) bit16j = 0;
+		for (i=0; i<16; ++i) {
+			int bit16i = BIT_16;
+			if ((i & 3) == 0) bit16i = 0;
+			palmap32[n++] = ((palette3DO[ppu_memory[0x3f00 + j]] | bit16j) << 16) | palette3DO[ppu_memory[0x3f00 + i]] | bit16i;
+		}
+	}
+}
+
+void update_scanline_values(int scanline, int times)
+{
+	int i;
+	for (i=0; i<times; ++i) {
+		const int y = scanline + i;
+
+		// loopy scanline start -> v:0000010000011111=t:0000010000011111 | v=t
+		loopyV &= 0xfbe0;
+		loopyV |= (loopyT & 0x041f);
+
+		loopyVtab[y] = loopyV;
+
+		// subtile y_offset == 7
+		if((loopyV & 0x7000) == 0x7000) {
+			// subtile y_offset = 0
+			loopyV &= 0x8fff;
+
+			// nametable line == 29
+			if((loopyV & 0x03e0) == 0x03a0) {
+				// switch nametables (bit 11)
+				loopyV ^= 0x0800;
+
+				// name table line = 0
+				loopyV &= 0xfc1f;
+			} else {
+				// nametable line == 31
+				if((loopyV & 0x03e0) == 0x03e0) {
+					// name table line = 0
+					loopyV &= 0xfc1f;
+				} else {
+						loopyV += 0x0020;
+				}
+			}
+		} else {
+			// next subtile y_offset
+			loopyV += 0x1000;
+		}
+	}
+}
+
 void render_background(int scanline)
 {
 	int i, tile_count;
@@ -288,54 +348,36 @@ void render_background(int scanline)
 	uint32 *xy_scroll_pair;
 
 	int pt_addr;
-
+	int pt_addr_off;
 	uint16 *dst;
-	static uint32 palmap32[256];
+	
+	const uint32 loopyVval = loopyVtab[scanline];
 	const uint32 *palSrc32 = (uint32*)palmap32;
 	const uint32 screenCelWidthInDwords = screenCel->ccb_Width >> 1;
 
-	if (!background_on || (systemType == SYSTEM_NTSC && scanline < 8)) return;
-	if (systemType == SYSTEM_NTSC) scanline -= 8;
+	// We may not need this. Either a lame hack to position screen or it actually does have to do with different NES timings
+	//if (systemType == SYSTEM_NTSC) scanline -= 8;
 	
 	dst = (uint16*)screenCel->ccb_SourcePtr + scanline * screenCel->ccb_Width;
 
-	// loopy scanline start -> v:0000010000011111=t:0000010000011111 | v=t
-	loopyV &= 0xfbe0;
-	loopyV |= (loopyT & 0x041f);
+	x_scroll = (loopyVval & 0x1f);
+	y_scroll = (loopyVval & 0x03e0) >> 5;
 
-	x_scroll = (loopyV & 0x1f);
-	y_scroll = (loopyV & 0x03e0) >> 5;
+	nt_addr = 0x2000 + (loopyVval & 0x0fff);
+	at_addr = 0x2000 + (loopyVval & 0x0c00) + 0x03c0 + ((y_scroll & 0xfffc) << 1);
+	pt_addr_off = ((loopyVval & 0x7000) >> 12);
 
-	nt_addr = 0x2000 + (loopyV & 0x0fff);
-	at_addr = 0x2000 + (loopyV & 0x0c00) + 0x03c0 + ((y_scroll & 0xfffc) << 1);
+	xy_scroll_pair = (uint32*)&xy_scroll_tab[(y_scroll >> 1) & 1][x_scroll];
 
-
-	// It's possible colors will break in some games if we don't do this every scanline or char line
-	// I can optimize it or detect if those palette entries change by the CPU at a specific line in the future and only then do this 256 values copy.
-	// Right now I do it once per frame and super mario doesn't break at least
-	if (scanline == 0) {
-	//if ((scanline & 7) == 0) {
-	//if ((scanline & 15) == 0) {
-		int j, n = 0;
-		for (j=0; j<16; ++j) {
-			int bit16j = BIT_16;
-			if ((j & 3) == 0) bit16j = 0;
-			for (i=0; i<16; ++i) {
-				int bit16i = BIT_16;
-				if ((i & 3) == 0) bit16i = 0;
-				palmap32[n++] = ((palette3DO[ppu_memory[0x3f00 + j]] | bit16j) << 16) | palette3DO[ppu_memory[0x3f00 + i]] | bit16i;
-			}
-		}
-	}
 
 	// draw 33 tiles in a scanline (32 + 1 for scrolling)
-	xy_scroll_pair = (uint32*)&xy_scroll_tab[(y_scroll >> 1) & 1][x_scroll];
-	for(tile_count = 0; tile_count < 33; tile_count++) {
+	for(tile_count = 0; tile_count < 33; tile_count++)
+	{
 		const int at_addr_off = at_addr + (x_scroll >> 2);
 		const int attribs = (ppu_memory[at_addr_off] >> *xy_scroll_pair++) & 3;
 		const uint32 *tilemixAttribOffset = (uint32*)&tilemix[attribs];
 
-		pt_addr = (ppu_memory[nt_addr] << 4) + ((loopyV & 0x7000) >> 12);
+		pt_addr = (ppu_memory[nt_addr] << 4) + pt_addr_off;
 
 		// check if the pattern address needs to be high
 		if(background_addr_hi)
@@ -412,32 +454,6 @@ void render_background(int scanline)
 			at_addr ^= 0x0400;
 			nt_addr -= 0x0020;
 		}
-	}
-
-	// subtile y_offset == 7
-	if((loopyV & 0x7000) == 0x7000) {
-		// subtile y_offset = 0
-		loopyV &= 0x8fff;
-
-		// nametable line == 29
-		if((loopyV & 0x03e0) == 0x03a0) {
-			// switch nametables (bit 11)
-			loopyV ^= 0x0800;
-
-			// name table line = 0
-			loopyV &= 0xfc1f;
-		} else {
-			// nametable line == 31
-			if((loopyV & 0x03e0) == 0x03e0) {
-				// name table line = 0
-				loopyV &= 0xfc1f;
-			} else {
-          			loopyV += 0x0020;
-			}
-		}
-	} else {
-		// next subtile y_offset
-		loopyV += 0x1000;
 	}
 }
 

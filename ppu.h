@@ -64,5 +64,7 @@ void write_ppu_memory(unsigned int address,unsigned char data);
 void render_background(int scanline);
 void render_sprites();
 void check_sprite_hit(int scanline);
+void updatePalmap32();
+void update_scanline_values(int scanline, int times);
 
 #endif
