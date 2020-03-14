@@ -40,7 +40,6 @@
 #include "ppu.h"
 #include "macros.h"
 #include "romloader.h"
-#include "palette.h"
 #include "memory.h"
 
 // gfx cache -> [hor][ver]
@@ -275,9 +274,9 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 	return;
 }
 
-void render_background(int scanline, bool perCharRenderer)
+void render_background(int scanline)
 {
-	int tile_count;
+	int i, tile_count;
 
 	int nt_addr;
 	int at_addr;
@@ -289,11 +288,14 @@ void render_background(int scanline, bool perCharRenderer)
 	int pt_addr;
 
 	uint16 *dst;
+	const uint32 screenCelWidth = screenCel->ccb_Width;
+	static uint16 palmap[16];
+	const uint16 *palSrc = palmap;
 
 	if (!background_on || (systemType == SYSTEM_NTSC && scanline < 8)) return;
 	if (systemType == SYSTEM_NTSC) scanline -= 8;
 	
-	dst = (uint16*)screenCel->ccb_SourcePtr + scanline * screenCel->ccb_Width;
+	dst = (uint16*)screenCel->ccb_SourcePtr + scanline * screenCelWidth;
 
 	// loopy scanline start -> v:0000010000011111=t:0000010000011111 | v=t
 	loopyV &= 0xfbe0;
@@ -304,12 +306,18 @@ void render_background(int scanline, bool perCharRenderer)
 
 	nt_addr = 0x2000 + (loopyV & 0x0fff);
 	at_addr = 0x2000 + (loopyV & 0x0c00) + 0x03c0 + ((y_scroll & 0xfffc) << 1);
-	
+
+
+	if ((scanline & 7) == 0) {
+		for (i=0; i<16; ++i) {
+			palmap[i] = palette3DO[ppu_memory[0x3f00 + i] & 63];
+		}
+	}
+
 	// draw 33 tiles in a scanline (32 + 1 for scrolling)
 	xy_scroll_pair = (uint32*)&xy_scroll_tab[(y_scroll >> 1) & 1][x_scroll];
 	for(tile_count = 0; tile_count < 33; tile_count++) {
 		const int at_addr_off = at_addr + (x_scroll >> 2);
-		
 		const int attribs = (ppu_memory[at_addr_off] >> *xy_scroll_pair++) & 3;
 		const uint32 *tilemixAttribOffset = (uint32*)&tilemix[attribs];
 
@@ -319,22 +327,84 @@ void render_background(int scanline, bool perCharRenderer)
 		if(background_addr_hi)
 			pt_addr+=0x1000;
 
+		#ifdef PER_CHARLINE_RENDERER
+		{
+			uint32 *bp = (uint32*)ppu_memory[pt_addr];
+
+			for (i=0; i<2; ++i) {
+				const uint32 up2 = *(bp+2);
+				const uint32 up1 = *bp++;
+
+				{
+					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 >> 16) & 0xFF00) + (up1 >> 24));
+					*dst = palSrc[(tilemixNibbles >> 28) & 15];
+					*(dst+1) = palSrc[(tilemixNibbles >> 24) & 15];
+					*(dst+2) = palSrc[(tilemixNibbles >> 20) & 15];
+					*(dst+3) = palSrc[(tilemixNibbles >> 16) & 15];
+					*(dst+4) = palSrc[(tilemixNibbles >> 12) & 15];
+					*(dst+5) = palSrc[(tilemixNibbles >> 8) & 15];
+					*(dst+6) = palSrc[(tilemixNibbles >> 4) & 15];
+					*(dst+7) = palSrc[tilemixNibbles & 15];
+					dst += screenCelWidth;
+				}
+
+				{
+					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 >> 8) & 0xFF00) + ((up1 >> 16) & 0xFF));
+					*dst = palSrc[(tilemixNibbles >> 28) & 15];
+					*(dst+1) = palSrc[(tilemixNibbles >> 24) & 15];
+					*(dst+2) = palSrc[(tilemixNibbles >> 20) & 15];
+					*(dst+3) = palSrc[(tilemixNibbles >> 16) & 15];
+					*(dst+4) = palSrc[(tilemixNibbles >> 12) & 15];
+					*(dst+5) = palSrc[(tilemixNibbles >> 8) & 15];
+					*(dst+6) = palSrc[(tilemixNibbles >> 4) & 15];
+					*(dst+7) = palSrc[tilemixNibbles & 15];
+					dst += screenCelWidth;
+				}
+
+				{
+					const uint32 tilemixNibbles = *(tilemixAttribOffset + (up2 & 0xFF00) + ((up1 >> 8) & 0xFF));
+					*dst = palSrc[(tilemixNibbles >> 28) & 15];
+					*(dst+1) = palSrc[(tilemixNibbles >> 24) & 15];
+					*(dst+2) = palSrc[(tilemixNibbles >> 20) & 15];
+					*(dst+3) = palSrc[(tilemixNibbles >> 16) & 15];
+					*(dst+4) = palSrc[(tilemixNibbles >> 12) & 15];
+					*(dst+5) = palSrc[(tilemixNibbles >> 8) & 15];
+					*(dst+6) = palSrc[(tilemixNibbles >> 4) & 15];
+					*(dst+7) = palSrc[tilemixNibbles & 15];
+					dst += screenCelWidth;
+				}
+
+				{
+					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 << 8) & 0xFF00) + (up1 & 0xFF));
+					*dst = palSrc[(tilemixNibbles >> 28) & 15];
+					*(dst+1) = palSrc[(tilemixNibbles >> 24) & 15];
+					*(dst+2) = palSrc[(tilemixNibbles >> 20) & 15];
+					*(dst+3) = palSrc[(tilemixNibbles >> 16) & 15];
+					*(dst+4) = palSrc[(tilemixNibbles >> 12) & 15];
+					*(dst+5) = palSrc[(tilemixNibbles >> 8) & 15];
+					*(dst+6) = palSrc[(tilemixNibbles >> 4) & 15];
+					*(dst+7) = palSrc[tilemixNibbles & 15];
+					dst += screenCelWidth;
+				}
+			}
+		}
+		#else
 		{
 			const int p1 = ppu_memory[pt_addr];
 			const int p2 = ppu_memory[pt_addr + 8];
-			const unsigned char *ppuSrc = &ppu_memory[0x3f00];
 			const uint32 tilemixNibbles = *(tilemixAttribOffset + (p2 << 8) + p1);
 
-			*dst = palette3DO[ppuSrc[(tilemixNibbles >> 28) & 15]];
-			*(dst+1) = palette3DO[ppuSrc[(tilemixNibbles >> 24) & 15]];
-			*(dst+2) = palette3DO[ppuSrc[(tilemixNibbles >> 20) & 15]];
-			*(dst+3) = palette3DO[ppuSrc[(tilemixNibbles >> 16) & 15]];
-			*(dst+4) = palette3DO[ppuSrc[(tilemixNibbles >> 12) & 15]];
-			*(dst+5) = palette3DO[ppuSrc[(tilemixNibbles >> 8) & 15]];
-			*(dst+6) = palette3DO[ppuSrc[(tilemixNibbles >> 4) & 15]];
-			*(dst+7) = palette3DO[ppuSrc[tilemixNibbles & 15]];
+			*dst = palSrc[(tilemixNibbles >> 28) & 15];
+			*(dst+1) = palSrc[(tilemixNibbles >> 24) & 15];
+			*(dst+2) = palSrc[(tilemixNibbles >> 20) & 15];
+			*(dst+3) = palSrc[(tilemixNibbles >> 16) & 15];
+			*(dst+4) = palSrc[(tilemixNibbles >> 12) & 15];
+			*(dst+5) = palSrc[(tilemixNibbles >> 8) & 15];
+			*(dst+6) = palSrc[(tilemixNibbles >> 4) & 15];
+			*(dst+7) = palSrc[tilemixNibbles & 15];
 			dst += 8;
 		}
+		#endif
 
 		nt_addr++;
 		x_scroll = (x_scroll + 1) & 0x1F;

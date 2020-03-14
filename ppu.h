@@ -61,7 +61,7 @@ extern int mw_ppu_0x4014;
 void init_ppu();
 void show_gfxcache();
 void write_ppu_memory(unsigned int address,unsigned char data);
-void render_background(int scanline, bool perCharRenderer);
+void render_background(int scanline);
 void render_sprites();
 void check_sprite_hit(int scanline);
 

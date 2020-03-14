@@ -83,8 +83,6 @@ long romlen;
 int frameskipNum = 0;
 bool skipBackgroundRendering = false;
 
-bool fasterPerCharRenderer = false;
-
 
 static void initNESscreenCELs()
 {
@@ -142,7 +140,12 @@ static void runEmulationFrame()
 
 	unsigned short counter = 0;
 	unsigned short scanline = 0;
-	uint32 lineStep = 1;
+
+	#ifdef PER_CHARLINE_RENDERER
+		const uint32 lineStep = 8;
+	#else
+		const uint32 lineStep = 1;
+	#endif
 
 	bool skipThisFrame = frame || skipBackgroundRendering;
 
@@ -171,8 +174,6 @@ static void runEmulationFrame()
 
 	updateNesInput();
 	
-	if (fasterPerCharRenderer) lineStep = 8;
-
 	for(scanline = 0; scanline < NES_screen_height; scanline+=lineStep) {
 		if(!sprite_zero) {
 			int i;
@@ -186,7 +187,7 @@ static void runEmulationFrame()
 			if ((scanline & 7) == 0) {
 				scrollRowX[scanline >> 3] = loopyX & 7;
 			}
-			render_background(scanline, fasterPerCharRenderer);
+			render_background(scanline);
 		}
 
 		counter += CPU_execute(lineStep*scanline_refresh);
