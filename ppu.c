@@ -275,7 +275,7 @@ void write_ppu_memory(unsigned int address,unsigned char data)
 	return;
 }
 
-void render_background(int scanline)
+void render_background(int scanline, bool perCharRenderer)
 {
 	int tile_count;
 

@@ -83,6 +83,8 @@ long romlen;
 int frameskipNum = 0;
 bool skipBackgroundRendering = false;
 
+bool fasterPerCharRenderer = false;
+
 
 static void initNESscreenCELs()
 {
@@ -140,6 +142,7 @@ static void runEmulationFrame()
 
 	unsigned short counter = 0;
 	unsigned short scanline = 0;
+	uint32 lineStep = 1;
 
 	bool skipThisFrame = frame || skipBackgroundRendering;
 
@@ -167,23 +170,37 @@ static void runEmulationFrame()
 	loopyV = loopyT;
 
 	updateNesInput();
+	
+	if (fasterPerCharRenderer) lineStep = 8;
 
-	for(scanline = 0; scanline < NES_screen_height; scanline++) {
-		if(!sprite_zero && scanline > 0) {
-			check_sprite_hit(scanline);
+	for(scanline = 0; scanline < NES_screen_height; scanline+=lineStep) {
+		if(!sprite_zero) {
+			int i;
+			for (i=0; i<lineStep; ++i) {
+				const uint32 y = scanline + i;
+				if (y > 0) check_sprite_hit(y);
+			}
 		}
 
 		if (!skipThisFrame) {
 			if ((scanline & 7) == 0) {
 				scrollRowX[scanline >> 3] = loopyX & 7;
 			}
-			render_background(scanline);
+			render_background(scanline, fasterPerCharRenderer);
 		}
 
-		counter += CPU_execute(scanline_refresh);
+		counter += CPU_execute(lineStep*scanline_refresh);
 
 		if(mmc3_irq_enable == 1) {
-			if(scanline == mmc3_irq_counter) {
+			int i;
+			bool mmc3_has_irq = false;
+			for (i=0; i<lineStep; ++i) {
+				if(scanline + i == mmc3_irq_counter) {
+					mmc3_has_irq = true;
+					break;
+				}
+			}
+			if(mmc3_has_irq) {
 				IRQ(counter);
 				mmc3_irq_counter--;
 			}

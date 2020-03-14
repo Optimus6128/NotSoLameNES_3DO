@@ -32,6 +32,8 @@
 #ifndef LAMENES_PPU_H
 #define LAMENES_PPU_H
 
+#include "types.h"
+
 extern unsigned int ppu_control1;
 extern unsigned int ppu_control2;
 extern unsigned int ppu_addr;
@@ -59,7 +61,7 @@ extern int mw_ppu_0x4014;
 void init_ppu();
 void show_gfxcache();
 void write_ppu_memory(unsigned int address,unsigned char data);
-void render_background(int scanline);
+void render_background(int scanline, bool perCharRenderer);
 void render_sprites();
 void check_sprite_hit(int scanline);
 
