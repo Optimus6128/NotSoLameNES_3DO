@@ -330,6 +330,7 @@ void render_background(int scanline)
 		#ifdef PER_CHARLINE_RENDERER
 		{
 			uint32 *bp = (uint32*)ppu_memory[pt_addr];
+			uint16 *dstc = dst;
 
 			for (i=0; i<2; ++i) {
 				const uint32 up2 = *(bp+2);
@@ -337,56 +338,57 @@ void render_background(int scanline)
 
 				{
 					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 >> 16) & 0xFF00) + (up1 >> 24));
-					*dst = palSrc[(tilemixNibbles >> 28) & 15];
-					*(dst+1) = palSrc[(tilemixNibbles >> 24) & 15];
-					*(dst+2) = palSrc[(tilemixNibbles >> 20) & 15];
-					*(dst+3) = palSrc[(tilemixNibbles >> 16) & 15];
-					*(dst+4) = palSrc[(tilemixNibbles >> 12) & 15];
-					*(dst+5) = palSrc[(tilemixNibbles >> 8) & 15];
-					*(dst+6) = palSrc[(tilemixNibbles >> 4) & 15];
-					*(dst+7) = palSrc[tilemixNibbles & 15];
-					dst += screenCelWidth;
+					*dstc = palSrc[(tilemixNibbles >> 28) & 15];
+					*(dstc+1) = palSrc[(tilemixNibbles >> 24) & 15];
+					*(dstc+2) = palSrc[(tilemixNibbles >> 20) & 15];
+					*(dstc+3) = palSrc[(tilemixNibbles >> 16) & 15];
+					*(dstc+4) = palSrc[(tilemixNibbles >> 12) & 15];
+					*(dstc+5) = palSrc[(tilemixNibbles >> 8) & 15];
+					*(dstc+6) = palSrc[(tilemixNibbles >> 4) & 15];
+					*(dstc+7) = palSrc[tilemixNibbles & 15];
+					dstc += screenCelWidth;
 				}
 
 				{
 					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 >> 8) & 0xFF00) + ((up1 >> 16) & 0xFF));
-					*dst = palSrc[(tilemixNibbles >> 28) & 15];
-					*(dst+1) = palSrc[(tilemixNibbles >> 24) & 15];
-					*(dst+2) = palSrc[(tilemixNibbles >> 20) & 15];
-					*(dst+3) = palSrc[(tilemixNibbles >> 16) & 15];
-					*(dst+4) = palSrc[(tilemixNibbles >> 12) & 15];
-					*(dst+5) = palSrc[(tilemixNibbles >> 8) & 15];
-					*(dst+6) = palSrc[(tilemixNibbles >> 4) & 15];
-					*(dst+7) = palSrc[tilemixNibbles & 15];
-					dst += screenCelWidth;
+					*dstc = palSrc[(tilemixNibbles >> 28) & 15];
+					*(dstc+1) = palSrc[(tilemixNibbles >> 24) & 15];
+					*(dstc+2) = palSrc[(tilemixNibbles >> 20) & 15];
+					*(dstc+3) = palSrc[(tilemixNibbles >> 16) & 15];
+					*(dstc+4) = palSrc[(tilemixNibbles >> 12) & 15];
+					*(dstc+5) = palSrc[(tilemixNibbles >> 8) & 15];
+					*(dstc+6) = palSrc[(tilemixNibbles >> 4) & 15];
+					*(dstc+7) = palSrc[tilemixNibbles & 15];
+					dstc += screenCelWidth;
 				}
 
 				{
 					const uint32 tilemixNibbles = *(tilemixAttribOffset + (up2 & 0xFF00) + ((up1 >> 8) & 0xFF));
-					*dst = palSrc[(tilemixNibbles >> 28) & 15];
-					*(dst+1) = palSrc[(tilemixNibbles >> 24) & 15];
-					*(dst+2) = palSrc[(tilemixNibbles >> 20) & 15];
-					*(dst+3) = palSrc[(tilemixNibbles >> 16) & 15];
-					*(dst+4) = palSrc[(tilemixNibbles >> 12) & 15];
-					*(dst+5) = palSrc[(tilemixNibbles >> 8) & 15];
-					*(dst+6) = palSrc[(tilemixNibbles >> 4) & 15];
-					*(dst+7) = palSrc[tilemixNibbles & 15];
-					dst += screenCelWidth;
+					*dstc = palSrc[(tilemixNibbles >> 28) & 15];
+					*(dstc+1) = palSrc[(tilemixNibbles >> 24) & 15];
+					*(dstc+2) = palSrc[(tilemixNibbles >> 20) & 15];
+					*(dstc+3) = palSrc[(tilemixNibbles >> 16) & 15];
+					*(dstc+4) = palSrc[(tilemixNibbles >> 12) & 15];
+					*(dstc+5) = palSrc[(tilemixNibbles >> 8) & 15];
+					*(dstc+6) = palSrc[(tilemixNibbles >> 4) & 15];
+					*(dstc+7) = palSrc[tilemixNibbles & 15];
+					dstc += screenCelWidth;
 				}
 
 				{
 					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 << 8) & 0xFF00) + (up1 & 0xFF));
-					*dst = palSrc[(tilemixNibbles >> 28) & 15];
-					*(dst+1) = palSrc[(tilemixNibbles >> 24) & 15];
-					*(dst+2) = palSrc[(tilemixNibbles >> 20) & 15];
-					*(dst+3) = palSrc[(tilemixNibbles >> 16) & 15];
-					*(dst+4) = palSrc[(tilemixNibbles >> 12) & 15];
-					*(dst+5) = palSrc[(tilemixNibbles >> 8) & 15];
-					*(dst+6) = palSrc[(tilemixNibbles >> 4) & 15];
-					*(dst+7) = palSrc[tilemixNibbles & 15];
-					dst += screenCelWidth;
+					*dstc = palSrc[(tilemixNibbles >> 28) & 15];
+					*(dstc+1) = palSrc[(tilemixNibbles >> 24) & 15];
+					*(dstc+2) = palSrc[(tilemixNibbles >> 20) & 15];
+					*(dstc+3) = palSrc[(tilemixNibbles >> 16) & 15];
+					*(dstc+4) = palSrc[(tilemixNibbles >> 12) & 15];
+					*(dstc+5) = palSrc[(tilemixNibbles >> 8) & 15];
+					*(dstc+6) = palSrc[(tilemixNibbles >> 4) & 15];
+					*(dstc+7) = palSrc[tilemixNibbles & 15];
+					dstc += screenCelWidth;
 				}
 			}
+			dst += 8;
 		}
 		#else
 		{
