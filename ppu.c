@@ -73,6 +73,8 @@ unsigned int sprite_address = 0x00;
 // used to flip between first and second write (0x2005)
 unsigned int ppu_bgscr_f = 0x00;
 
+#define BIT_16 (1 << 15)
+
 void init_ppu()
 {
 	int i,j,a,b;
@@ -310,7 +312,13 @@ void render_background(int scanline)
 
 	if ((scanline & 7) == 0) {
 		for (i=0; i<16; ++i) {
-			palmap[i] = palette3DO[ppu_memory[0x3f00 + i] & 63];
+			int bit16 = BIT_16;
+			if ((i & 3) == 0) bit16 = 0;
+			// We'll use the 16th bit of the final buffer to do more proper check on sprite against background colision or priority. We lost that information when I was optimizing.
+			// Specifically I've replaced the separate 8bit buffer (which had color index values 0 to 3) with the main 16bit buffer (to avoid writting in two buffers at once).
+			// I broke it when mario is behind a pipe for example or the mushroom is ascending behind the block. We are checking for value 0 later, but that's gonna be palettized now.
+			// So maybe we can denote transparent pixel with an extra bit. The 16th bit is not used in CEL rendering, so most probably it's free to steal.
+			palmap[i] = palette3DO[ppu_memory[0x3f00 + i] & 63] | bit16;
 		}
 	}
 
@@ -329,7 +337,7 @@ void render_background(int scanline)
 
 		#ifdef PER_CHARLINE_RENDERER
 		{
-			uint32 *bp = (uint32*)ppu_memory[pt_addr];
+			uint32 *bp = (uint32*)&ppu_memory[pt_addr];
 			uint16 *dstc = dst;
 
 			for (i=0; i<2; ++i) {
@@ -572,7 +580,7 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 						*(bgPtr + i) = palette3DO[ppu_memory[0x3f10 + value]];
 					} else {
 						// draw the sprite pixel if the background pixel is transparent (0)
-						if(*(bgPtr + i) == 0) {
+						if((*(bgPtr + i) & BIT_16) == 0) {
 							*(bgPtr + i) = palette3DO[ppu_memory[0x3f10 + value]];
 						}
 					}
@@ -637,7 +645,7 @@ void render_sprite(int x, int y, int pattern_number, int attribs, int spr_nr)
 						*(bgPtr + i) = palette3DO[ppu_memory[0x3f10 + value]];
 					} else {
 						// draw the sprite pixel if the background pixel is transparent (0)
-						if(*(bgPtr + i) == 0) {
+						if((*(bgPtr + i) & BIT_16) == 0) {
 							*(bgPtr + i) = palette3DO[ppu_memory[0x3f10 + value]];
 						}
 					}
