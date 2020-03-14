@@ -292,7 +292,9 @@ void render_background(int scanline)
 	uint16 *dst;
 	const uint32 screenCelWidth = screenCel->ccb_Width;
 	static uint16 palmap[16];
+	static uint32 palmap32[256];
 	const uint16 *palSrc = palmap;
+	const uint32 *palSrc32 = (uint32*)palmap32;
 
 	if (!background_on || (systemType == SYSTEM_NTSC && scanline < 8)) return;
 	if (systemType == SYSTEM_NTSC) scanline -= 8;
@@ -310,15 +312,21 @@ void render_background(int scanline)
 	at_addr = 0x2000 + (loopyV & 0x0c00) + 0x03c0 + ((y_scroll & 0xfffc) << 1);
 
 
-	if ((scanline & 7) == 0) {
-		for (i=0; i<16; ++i) {
-			int bit16 = BIT_16;
-			if ((i & 3) == 0) bit16 = 0;
-			// We'll use the 16th bit of the final buffer to do more proper check on sprite against background colision or priority. We lost that information when I was optimizing.
-			// Specifically I've replaced the separate 8bit buffer (which had color index values 0 to 3) with the main 16bit buffer (to avoid writting in two buffers at once).
-			// I broke it when mario is behind a pipe for example or the mushroom is ascending behind the block. We are checking for value 0 later, but that's gonna be palettized now.
-			// So maybe we can denote transparent pixel with an extra bit. The 16th bit is not used in CEL rendering, so most probably it's free to steal.
-			palmap[i] = palette3DO[ppu_memory[0x3f00 + i] & 63] | bit16;
+	// It's possible colors will break in some games if we don't do this every scanline or char line
+	// I can optimize it or detect if those palette entries change by the CPU at a specific line in the future and only then do this 256 values copy.
+	// Right now I do it once per frame and super mario doesn't break at least
+	if (scanline == 0) {
+	//if ((scanline & 7) == 0) {
+	//if ((scanline & 15) == 0) {
+		int j, n = 0;
+		for (j=0; j<16; ++j) {
+			int bit16j = BIT_16;
+			if ((j & 3) == 0) bit16j = 0;
+			for (i=0; i<16; ++i) {
+				int bit16i = BIT_16;
+				if ((i & 3) == 0) bit16i = 0;
+				palmap32[n++] = ((palette3DO[ppu_memory[0x3f00 + j]] | bit16j) << 16) | palette3DO[ppu_memory[0x3f00 + i]] | bit16i;
+			}
 		}
 	}
 
@@ -400,18 +408,16 @@ void render_background(int scanline)
 		}
 		#else
 		{
-			const int p1 = ppu_memory[pt_addr];
-			const int p2 = ppu_memory[pt_addr + 8];
+			const uint32 p1 = ppu_memory[pt_addr];
+			const uint32 p2 = ppu_memory[pt_addr + 8];
 			const uint32 tilemixNibbles = *(tilemixAttribOffset + (p2 << 8) + p1);
+			uint32 *dst32 = (uint32*)dst;
 
-			*dst = palSrc[(tilemixNibbles >> 28) & 15];
-			*(dst+1) = palSrc[(tilemixNibbles >> 24) & 15];
-			*(dst+2) = palSrc[(tilemixNibbles >> 20) & 15];
-			*(dst+3) = palSrc[(tilemixNibbles >> 16) & 15];
-			*(dst+4) = palSrc[(tilemixNibbles >> 12) & 15];
-			*(dst+5) = palSrc[(tilemixNibbles >> 8) & 15];
-			*(dst+6) = palSrc[(tilemixNibbles >> 4) & 15];
-			*(dst+7) = palSrc[tilemixNibbles & 15];
+			*dst32 = palSrc32[(tilemixNibbles >> 24) & 255];
+			*(dst32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
+			*(dst32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
+			*(dst32+3) = palSrc32[tilemixNibbles & 255];
+
 			dst += 8;
 		}
 		#endif
