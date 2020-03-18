@@ -56,6 +56,10 @@
 #include "3DO/system_graphics.h"
 #include "3DO/tools.h"
 
+char *romsDirectory = "Roms";
+uint32 fileCount;
+char fileStr[16][20];
+
 char romfn[256];
 
 // cache the rom in memory to access the data quickly
@@ -261,6 +265,8 @@ static void runEmulationFrame()
 
 void runEmu()
 {
+	int i;
+
 	if (DEBUG_MEM_FREQS) {
 		mr_nohw = 0;
 		mr_hw = 0;
@@ -286,7 +292,6 @@ void runEmu()
 	
 	// Frameskip to speed up things for testing
 	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
-		int i;
 		frameskipNum = (frameskipNum + 1) & 3;
 		for (i=0; i<frameskipNum; ++i) {
 			int c = i + 1;
@@ -333,42 +338,29 @@ void runEmu()
 		drawNumber(0, 200, mw_ppu_0x2007);
 		drawNumber(0, 208, mw_ppu_0x4014);
 	}
+
+	for (i=0; i<fileCount; ++i) {
+		drawText(0, 8 + i*8, fileStr[i]);
+	}
+	drawNumber(0, 232, fileCount);
 }
-
-uint32 fileCount;
-char *fileStr[2][256];
-
-#include "types.h"
-#include "filesystem.h"
-#include "filefunctions.h"
-#include "io.h"
-#include "string.h"
-#include "mem.h"
-#include "stdio.h"
-#include "operror.h"
-#include "directory.h"
-#include "directoryfunctions.h"
 
 char *selectFileFromMenu()
 {
 	Directory      *dir;
 	DirectoryEntry  de;
 
-	Item dirItem = OpenDiskFile("/Roms");
+	Item dirItem = OpenDiskFile(romsDirectory);
 
     dir = OpenDirectoryItem(dirItem);
 
 	fileCount = 0;
 	while (ReadDirectory(dir, &de) >= 0)
 	{
-		sprintf(fileStr[0][fileCount], "file '%s', type 0x%lx, ID 0x%lx, flags 0x%lx\n",	de.de_FileName, de.de_Type,	de.de_UniqueIdentifier, de.de_Flags);
-		sprintf(fileStr[1][fileCount], "%d bytes, %d block(s) of %d byte(s) each  %d avatar(s)\n", de.de_ByteCount,	de.de_BlockCount, de.de_BlockSize, de.de_AvatarCount);
-
-		if (de.de_Flags & FILE_IS_DIRECTORY)
-		{
-			//ignore
+		if (!(de.de_Flags & FILE_IS_DIRECTORY)) {
+			sprintf(fileStr[fileCount], "%s\n", de.de_FileName);
+			fileCount++;
 		}
-		fileCount++;
 	}
 	CloseDirectory(dir);
 

@@ -20,6 +20,11 @@
 #include "stdlib.h"
 #include "event.h"
 #include "controlpad.h"
+#include "filesystem.h"
+#include "filefunctions.h"
+#include "operror.h"
+#include "directory.h"
+#include "directoryfunctions.h"
 
 #include "stdio.h"
 #include "graphics.h"
