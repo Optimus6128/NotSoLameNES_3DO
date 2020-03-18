@@ -68,7 +68,7 @@ unsigned int scanline_refresh;
 
 int systemType;
 
-unsigned char pause_emulation = 0;
+bool pause_emulation = false;
 
 unsigned short NES_screen_width;
 unsigned short NES_screen_height;
@@ -81,7 +81,8 @@ uint16 palette3DO[256];
 long romlen;
 
 int frameskipNum = 0;
-bool skipBackgroundRendering = false;
+bool skipRendering = false;
+bool skipCPU = false;
 
 
 static void initNESscreenCELs()
@@ -147,30 +148,32 @@ static void runEmulationFrame()
 		const uint32 lineStep = 1;
 	#endif
 
-	bool skipThisFrame = frame || skipBackgroundRendering;
+	bool skipThisFrame = frame || skipRendering;
 
 
-	CPU_execute(start_int);
+	if (!skipCPU) {
+		CPU_execute(start_int);
 
-	// set ppu_status D7 to 1 and enter vblank
-	ppu_status |= 0x80;
-	write_memory(0x2002,ppu_status);
+		// set ppu_status D7 to 1 and enter vblank
+		ppu_status |= 0x80;
+		write_memory(0x2002,ppu_status);
 
-	counter += CPU_execute(12); // needed for some roms
+		counter += CPU_execute(12); // needed for some roms
 
-	if(exec_nmi_on_vblank) {
-		counter += NMI(counter);
+		if(exec_nmi_on_vblank) {
+			counter += NMI(counter);
+		}
+
+		counter += CPU_execute(vblank_cycle_timeout);
+
+		// vblank ends (ppu_status D7) is set to 0, sprite_zero (ppu_status D6) is set to 0
+		ppu_status &= 0x3F;
+
+		// and write to mem
+		write_memory(0x2002,ppu_status);
+
+		loopyV = loopyT;
 	}
-
-	counter += CPU_execute(vblank_cycle_timeout);
-
-	// vblank ends (ppu_status D7) is set to 0, sprite_zero (ppu_status D6) is set to 0
-	ppu_status &= 0x3F;
-
-	// and write to mem
-	write_memory(0x2002,ppu_status);
-
-	loopyV = loopyT;
 
 	updateNesInput();
 	
@@ -200,20 +203,22 @@ static void runEmulationFrame()
 			}
 		}
 
-		counter += CPU_execute(lineStep*scanline_refresh);
+		if (!skipCPU) {
+			counter += CPU_execute(lineStep*scanline_refresh);
 
-		if(mmc3_irq_enable == 1) {
-			int i;
-			bool mmc3_has_irq = false;
-			for (i=0; i<lineStep; ++i) {
-				if(scanline + i == mmc3_irq_counter) {
-					mmc3_has_irq = true;
-					break;
+			if(mmc3_irq_enable == 1) {
+				int i;
+				bool mmc3_has_irq = false;
+				for (i=0; i<lineStep; ++i) {
+					if(scanline + i == mmc3_irq_counter) {
+						mmc3_has_irq = true;
+						break;
+					}
 				}
-			}
-			if(mmc3_has_irq) {
-				IRQ(counter);
-				mmc3_irq_counter--;
+				if(mmc3_has_irq) {
+					IRQ(counter);
+					mmc3_irq_counter--;
+				}
 			}
 		}
 	}
@@ -293,7 +298,10 @@ void runEmu()
 	}
 
 	// No rendering emulation (to purely benchmark CPU)
-	skipBackgroundRendering = isJoyButtonPressed(JOY_BUTTON_RPAD);
+	skipRendering = isJoyButtonPressed(JOY_BUTTON_RPAD);
+
+	// Pause CPU execution (to benchmark rendering of the last frame only);
+	skipCPU = isJoyButtonPressed(JOY_BUTTON_LPAD);
 
 	if (!pause_emulation) {
 		runEmulationFrame();
@@ -327,6 +335,69 @@ void runEmu()
 	}
 }
 
+uint32 fileCount;
+char *fileStr[2][256];
+
+#include "types.h"
+#include "filesystem.h"
+#include "filefunctions.h"
+#include "io.h"
+#include "string.h"
+#include "mem.h"
+#include "stdio.h"
+#include "operror.h"
+#include "directory.h"
+#include "directoryfunctions.h"
+
+char *selectFileFromMenu()
+{
+	Directory      *dir;
+	DirectoryEntry  de;
+
+	Item dirItem = OpenDiskFile("/Roms");
+
+    dir = OpenDirectoryItem(dirItem);
+
+	fileCount = 0;
+	while (ReadDirectory(dir, &de) >= 0)
+	{
+		sprintf(fileStr[0][fileCount], "file '%s', type 0x%lx, ID 0x%lx, flags 0x%lx\n",	de.de_FileName, de.de_Type,	de.de_UniqueIdentifier, de.de_Flags);
+		sprintf(fileStr[1][fileCount], "%d bytes, %d block(s) of %d byte(s) each  %d avatar(s)\n", de.de_ByteCount,	de.de_BlockCount, de.de_BlockSize, de.de_AvatarCount);
+
+		if (de.de_Flags & FILE_IS_DIRECTORY)
+		{
+			//ignore
+		}
+		fileCount++;
+	}
+	CloseDirectory(dir);
+
+	return "rom.nes";
+}
+
+void initLoad(char *filename)
+{
+	if(analyze_header(filename) == 1)
+	{
+		free(sprite_memory);
+		free(ppu_memory);
+		free(memory);
+		exit(1);
+	}
+
+	// rom cache memory
+	romcache = (unsigned char *)AllocMem(romlen, MEMTYPE_ANY);
+
+	if (load_rom(filename) == 1)
+	{
+		free(sprite_memory);
+		free(ppu_memory);
+		free(memory);
+		free(romcache);
+		exit(1);
+	}
+}
+
 void initEmu()
 {
 	// cpu speed
@@ -357,31 +428,18 @@ void initEmu()
 	unsigned int PAL_VBLANK_CYCLE_TIMEOUT = (PAL_TOTAL_HEIGHT-PAL_HEIGHT) * PAL_VBLANK_INT / PAL_TOTAL_HEIGHT;
 
 
-	if(analyze_header("rom.nes") == 1)
-	{
-		free(sprite_memory);
-		free(ppu_memory);
-		free(memory);
+	char *filename = selectFileFromMenu();
+
+	if (filename) {
+		initLoad(filename);
+	} else {
 		exit(1);
 	}
 
-	// rom cache memory
-	romcache = (unsigned char *)AllocMem(romlen, MEMTYPE_ANY);
 
-	if (load_rom("rom.nes") == 1)
-	{
-		free(sprite_memory);
-		free(ppu_memory);
-		free(memory);
-		free(romcache);
-		exit(1);
-	}
-
-	if (MAPPER == 4)
-	{
+	if (MAPPER == 4) {
 		mmc3_reset();
 	}
-	
 
 	// Forcing it to PAL for now, probably I have to detect the type from the ROM loaded in the future
 	systemType = SYSTEM_PAL;

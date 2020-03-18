@@ -49,9 +49,6 @@ extern CCB *screenCel;
 extern int scrollRowX[32];
 extern uint16 palette3DO[256];
 
-extern unsigned char CPU_is_running;
-extern unsigned char pause_emulation;
-
 extern unsigned short NES_screen_width;
 extern unsigned short NES_screen_height;
 
