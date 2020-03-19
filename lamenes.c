@@ -339,10 +339,10 @@ void runEmu()
 		drawNumber(0, 208, mw_ppu_0x4014);
 	}
 
-	for (i=0; i<fileCount; ++i) {
+	/*for (i=0; i<fileCount; ++i) {
 		drawText(0, 8 + i*8, fileStr[i]);
 	}
-	drawNumber(0, 232, fileCount);
+	drawNumber(0, 232, fileCount);*/
 }
 
 char *selectFileFromMenu()
@@ -469,6 +469,6 @@ void initEmu()
 
 int main()
 {
-	coreInit(initEmu, CORE_VRAM_SINGLEBUFFER | CORE_SHOW_FPS | CORE_NO_CLEAR_FRAME | CORE_NO_VSYNC);
+	coreInit(initEmu, CORE_VRAM_SINGLEBUFFER | CORE_SHOW_FPS | CORE_NO_CLEAR_FRAME | /*CORE_SHOW_MEM | */CORE_NO_VSYNC);
 	coreRun(runEmu);
 }
