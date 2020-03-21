@@ -360,6 +360,7 @@ char *selectFileFromMenu()
 	int selectIndex = 0;
 	const int maxFilesPerScreen = 30;
 	bool firstUpdate = true;
+	int prevFilePage = 0;
 	
 	const uint16 colorWhite = MakeRGB15(31, 31, 31);
 	const uint16 colorGrey = MakeRGB15(15, 15, 15);
@@ -382,14 +383,11 @@ char *selectFileFromMenu()
 
 	// Main rom selection menu
 	while(!selectedRom) {
-		int maxSelectIndex = maxFilesPerScreen;
-		if (maxSelectIndex > fileCount-1) maxSelectIndex = fileCount-1;
-		if (maxSelectIndex < 0) maxSelectIndex = 0;
 
 		updateInput();
 
 		if (isJoyButtonPressedOnce(JOY_BUTTON_DOWN)) {
-			if (selectIndex < maxSelectIndex-1) ++selectIndex;
+			if (selectIndex < fileCount-1) ++selectIndex;
 		}
 		if (isJoyButtonPressedOnce(JOY_BUTTON_UP)) {
 			if (selectIndex > 0) --selectIndex;
@@ -400,23 +398,30 @@ char *selectFileFromMenu()
 		}
 		if (isJoyButtonPressedOnce(JOY_BUTTON_RPAD)) {
 			selectIndex += maxFilesPerScreen;
-			if (selectIndex > maxSelectIndex-1) selectIndex = maxSelectIndex-1;
+			if (selectIndex > fileCount-1) selectIndex = fileCount-1;
 		}
 		if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
 			selectedRom = fileStr[selectIndex];
 		}
 
 		if (wasAnyJoyButtonPressed() || firstUpdate) {
+			const int filePage = selectIndex / maxFilesPerScreen;
+			const int pageStartIndex = filePage * maxFilesPerScreen;
+
+			if (filePage != prevFilePage) clearAllBuffers();
+			prevFilePage = filePage;
+
 			for (i=0; i<maxFilesPerScreen; ++i) {
+				const int realIndex = pageStartIndex + i;
 
 				uint16 color = colorGrey;
-				if (selectIndex == i) {
+				if (selectIndex == realIndex) {
 					color = colorWhite;
 				}
 
-				if (i < maxSelectIndex) {
+				if (realIndex < fileCount) {
 					setTextColor(color);
-					drawText(0, i*8, fileStr[i]);
+					drawText(0, i*8, fileStr[realIndex]);
 				}
 			}
 
