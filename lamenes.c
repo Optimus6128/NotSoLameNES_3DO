@@ -82,7 +82,7 @@ int frameskipNum = 0;
 bool skipRendering = false;
 bool skipCPU = false;
 
-int renderer = RENDERER_PER_TILE;
+int renderer = RENDERER_PER_LINE;
 
 
 static void initNESscreenCELs()
@@ -300,7 +300,19 @@ void runEmu()
 	skipRendering = isJoyButtonPressed(JOY_BUTTON_RPAD);
 
 	// Pause CPU execution (to benchmark rendering of the last frame only);
-	skipCPU = isJoyButtonPressed(JOY_BUTTON_LPAD);
+	//skipCPU = isJoyButtonPressed(JOY_BUTTON_LPAD);
+
+	// I will steal this button to toggle between the more accurate and the faster renderer
+	if (isJoyButtonPressedOnce(JOY_BUTTON_LPAD)) {
+		uint16 color = 0;
+		if (renderer == RENDERER_PER_LINE) {
+			color = MakeRGB15(7, 31, 15);
+			renderer = RENDERER_PER_TILE;
+		} else {
+			renderer = RENDERER_PER_LINE;
+		}
+		drawThickPixel(158, 2, color);
+	}
 
 	if (!pause_emulation) {
 		runEmulationFrame();
