@@ -1,4 +1,4 @@
-/*
+ /*
  * LameNES - Nintendo Entertainment System (NES) emulator
  *
  * Copyright (c) 2005, Joey Loman, <joey@lamenes.org>
@@ -373,90 +373,111 @@ void render_background(int scanline)
 	xy_scroll_pair = (uint32*)&xy_scroll_tab[(y_scroll >> 1) & 1][x_scroll];
 
 
-	// draw 33 tiles in a scanline (32 + 1 for scrolling)
-	for(tile_count = 0; tile_count < 33; tile_count++)
-	{
-		const int at_addr_off = at_addr + (x_scroll >> 2);
-		const int attribs = (ppu_memory[at_addr_off] >> *xy_scroll_pair++) & 3;
-		const uint32 *tilemixAttribOffset = (uint32*)tilemix;
-		const uint32 attribBits = attribBitsTab[attribs];
-
-		pt_addr = (ppu_memory[nt_addr] << 4) + pt_addr_off;
-
-		// check if the pattern address needs to be high
-		if(background_addr_hi)
-			pt_addr+=0x1000;
-
-		#ifdef PER_CHARLINE_RENDERER
+	if (renderer == RENDERER_PER_LINE) {
+		for(tile_count = 0; tile_count < 33; tile_count++)
 		{
-			uint32 *bp = (uint32*)&ppu_memory[pt_addr];
-			uint32 *dstc32 = (uint32*)dst;
+			const int at_addr_off = at_addr + (x_scroll >> 2);
+			const int attribs = (ppu_memory[at_addr_off] >> *xy_scroll_pair++) & 3;
+			const uint32 *tilemixAttribOffset = (uint32*)tilemix;
+			const uint32 attribBits = attribBitsTab[attribs];
 
-			for (i=0; i<2; ++i) {
-				const uint32 up2 = *(bp+2);
-				const uint32 up1 = *bp++;
+			pt_addr = (ppu_memory[nt_addr] << 4) + pt_addr_off;
+			// check if the pattern address needs to be high
+			if(background_addr_hi)
+				pt_addr+=0x1000;
 
-				{
-					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 >> 16) & 0xFF00) + (up1 >> 24)) & attribBits;
-					*dstc32 = palSrc32[tilemixNibbles >> 24];
-					*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
-					*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
-					*(dstc32+3) = palSrc32[tilemixNibbles & 255];
-					dstc32 += screenCelWidthInDwords;
-				}
+			{
+				const uint32 p1 = ppu_memory[pt_addr];
+				const uint32 p2 = ppu_memory[pt_addr + 8];
+				const uint32 tilemixNibbles = *(tilemixAttribOffset + (p2 << 8) + p1) & attribBits;
 
-				{
-					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 >> 8) & 0xFF00) + ((up1 >> 16) & 0xFF)) & attribBits;
-					*dstc32 = palSrc32[tilemixNibbles >> 24];
-					*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
-					*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
-					*(dstc32+3) = palSrc32[tilemixNibbles & 255];
-					dstc32 += screenCelWidthInDwords;
-				}
-
-				{
-					const uint32 tilemixNibbles = *(tilemixAttribOffset + (up2 & 0xFF00) + ((up1 >> 8) & 0xFF)) & attribBits;
-					*dstc32 = palSrc32[tilemixNibbles >> 24];
-					*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
-					*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
-					*(dstc32+3) = palSrc32[tilemixNibbles & 255];
-					dstc32 += screenCelWidthInDwords;
-				}
-
-				{
-					const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 << 8) & 0xFF00) + (up1 & 0xFF)) & attribBits;
-					*dstc32 = palSrc32[tilemixNibbles >> 24];
-					*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
-					*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
-					*(dstc32+3) = palSrc32[tilemixNibbles & 255];
-					dstc32 += screenCelWidthInDwords;
-				}
+				uint32 *dst32 = (uint32*)dst;
+				*dst32 = palSrc32[tilemixNibbles >> 24];
+				*(dst32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
+				*(dst32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
+				*(dst32+3) = palSrc32[tilemixNibbles & 255];
+				dst += 8;
 			}
-			dst += 8;
+
+			nt_addr++;
+			x_scroll = (x_scroll + 1) & 0x1F;
+			// check if we crossed a nametable
+			if(x_scroll == 0) {
+				// switch name/attrib tables
+				nt_addr ^= 0x0400;
+				at_addr ^= 0x0400;
+				nt_addr -= 0x0020;
+			}
 		}
-		#else
+	} else if (renderer == RENDERER_PER_TILE) {
+		for(tile_count = 0; tile_count < 33; tile_count++)
 		{
-			const uint32 p1 = ppu_memory[pt_addr];
-			const uint32 p2 = ppu_memory[pt_addr + 8];
-			const uint32 tilemixNibbles = *(tilemixAttribOffset + (p2 << 8) + p1) & attribBits;
+			const int at_addr_off = at_addr + (x_scroll >> 2);
+			const int attribs = (ppu_memory[at_addr_off] >> *xy_scroll_pair++) & 3;
+			const uint32 *tilemixAttribOffset = (uint32*)tilemix;
+			const uint32 attribBits = attribBitsTab[attribs];
 
-			uint32 *dst32 = (uint32*)dst;
-			*dst32 = palSrc32[tilemixNibbles >> 24];
-			*(dst32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
-			*(dst32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
-			*(dst32+3) = palSrc32[tilemixNibbles & 255];
-			dst += 8;
-		}
-		#endif
+			pt_addr = (ppu_memory[nt_addr] << 4) + pt_addr_off;
+			// check if the pattern address needs to be high
+			if(background_addr_hi)
+				pt_addr+=0x1000;
 
-		nt_addr++;
-		x_scroll = (x_scroll + 1) & 0x1F;
-		// check if we crossed a nametable
-		if(x_scroll == 0) {
-			// switch name/attrib tables
-			nt_addr ^= 0x0400;
-			at_addr ^= 0x0400;
-			nt_addr -= 0x0020;
+			{
+				uint32 *bp = (uint32*)&ppu_memory[pt_addr];
+				uint32 *dstc32 = (uint32*)dst;
+
+				for (i=0; i<2; ++i) {
+					const uint32 up2 = *(bp+2);
+					const uint32 up1 = *bp++;
+
+					{
+						const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 >> 16) & 0xFF00) + (up1 >> 24)) & attribBits;
+						*dstc32 = palSrc32[tilemixNibbles >> 24];
+						*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
+						*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
+						*(dstc32+3) = palSrc32[tilemixNibbles & 255];
+						dstc32 += screenCelWidthInDwords;
+					}
+
+					{
+						const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 >> 8) & 0xFF00) + ((up1 >> 16) & 0xFF)) & attribBits;
+						*dstc32 = palSrc32[tilemixNibbles >> 24];
+						*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
+						*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
+						*(dstc32+3) = palSrc32[tilemixNibbles & 255];
+						dstc32 += screenCelWidthInDwords;
+					}
+
+					{
+						const uint32 tilemixNibbles = *(tilemixAttribOffset + (up2 & 0xFF00) + ((up1 >> 8) & 0xFF)) & attribBits;
+						*dstc32 = palSrc32[tilemixNibbles >> 24];
+						*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
+						*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
+						*(dstc32+3) = palSrc32[tilemixNibbles & 255];
+						dstc32 += screenCelWidthInDwords;
+					}
+
+					{
+						const uint32 tilemixNibbles = *(tilemixAttribOffset + ((up2 << 8) & 0xFF00) + (up1 & 0xFF)) & attribBits;
+						*dstc32 = palSrc32[tilemixNibbles >> 24];
+						*(dstc32+1) = palSrc32[(tilemixNibbles >> 16) & 255];
+						*(dstc32+2) = palSrc32[(tilemixNibbles >> 8) & 255];
+						*(dstc32+3) = palSrc32[tilemixNibbles & 255];
+						dstc32 += screenCelWidthInDwords;
+					}
+				}
+				dst += 8;
+			}
+
+			nt_addr++;
+			x_scroll = (x_scroll + 1) & 0x1F;
+			// check if we crossed a nametable
+			if(x_scroll == 0) {
+				// switch name/attrib tables
+				nt_addr ^= 0x0400;
+				at_addr ^= 0x0400;
+				nt_addr -= 0x0020;
+			}
 		}
 	}
 }

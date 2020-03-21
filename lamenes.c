@@ -82,6 +82,8 @@ int frameskipNum = 0;
 bool skipRendering = false;
 bool skipCPU = false;
 
+int renderer = RENDERER_PER_TILE;
+
 
 static void initNESscreenCELs()
 {
@@ -140,14 +142,12 @@ static void runEmulationFrame()
 	unsigned short counter = 0;
 	unsigned short scanline = 0;
 
-	#ifdef PER_CHARLINE_RENDERER
-		const uint32 lineStep = 8;
-	#else
-		const uint32 lineStep = 1;
-	#endif
-
 	bool skipThisFrame = frame || skipRendering;
 
+	uint32 lineStep = 1;
+	if (renderer!=RENDERER_PER_LINE) {
+		lineStep = 8;
+	}
 
 	if (!skipCPU) {
 		CPU_execute(start_int);
