@@ -338,17 +338,13 @@ void runEmu()
 		drawNumber(0, 200, mw_ppu_0x2007);
 		drawNumber(0, 208, mw_ppu_0x4014);
 	}
-
-	/*for (i=0; i<fileCount; ++i) {
-		drawText(0, 8 + i*8, fileStr[i]);
-	}
-	drawNumber(0, 232, fileCount);*/
 }
 
 char *selectFileFromMenu()
 {
 	Directory      *dir;
 	DirectoryEntry  de;
+	char *selectedRom = NULL;
 
 	Item dirItem = OpenDiskFile(romsDirectory);
 
@@ -364,7 +360,22 @@ char *selectFileFromMenu()
 	}
 	CloseDirectory(dir);
 
-	return "rom.nes";
+	while(!selectedRom) {
+		int i;
+		for (i=0; i<fileCount; ++i) {
+			drawText(0, 8 + i*8, fileStr[i]);
+		}
+		
+		displayScreen();
+
+		updateInput();
+		if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
+			selectedRom = "rom.nes";
+		}
+	}
+	clearAllBuffers();
+
+	return selectedRom;
 }
 
 void initLoad(char *filename)
@@ -469,6 +480,6 @@ void initEmu()
 
 int main()
 {
-	coreInit(initEmu, CORE_VRAM_SINGLEBUFFER | CORE_SHOW_FPS | CORE_NO_CLEAR_FRAME | /*CORE_SHOW_MEM | */CORE_NO_VSYNC);
+	coreInit(initEmu, CORE_VRAM_SINGLEBUFFER | CORE_SHOW_FPS | CORE_NO_CLEAR_FRAME | /*CORE_SHOW_MEM |*/ CORE_NO_VSYNC);
 	coreRun(runEmu);
 }

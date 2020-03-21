@@ -163,6 +163,16 @@ void setBuffer(uint32 num)
 	bufferIndex = num;
 }
 
+void clearAllBuffers()
+{
+	const uint32 totalBuffersNum = vramBuffersNum + offscreenBuffersNum;
+	int i;
+
+	for(i=0; i<totalBuffersNum; ++i) {
+		memset(Bitmaps[i]->bm_Buffer, 0, Bitmaps[i]->bm_Width * Bitmaps[i]->bm_Height * 2);
+	}
+}
+
 void drawPixel(int px, int py, uint16 c)
 {
 	uint16 *dst = (uint16*)(Bitmaps[screenPage]->bm_Buffer) + (py >> 1) * SCREEN_WIDTH * 2 + (py & 1) + (px << 1);
