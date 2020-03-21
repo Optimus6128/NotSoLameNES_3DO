@@ -41,7 +41,7 @@ unsigned char pad1[PAD_BUTTONS_NUM];
 // Corresponds to 3DO/input.h JOY_BUTTONS enums
 static int joyButtonsMap[JOY_BUTTONS_NUM] = { 
 	PAD_UP, PAD_DOWN, PAD_LEFT, PAD_RIGHT,
-	PAD_A, PAD_B,
+	PAD_B, PAD_A,
 	PAD_PAUSE_EMU, PAD_LOAD_STATE, PAD_SAVE_STATE,
 	PAD_SELECT, PAD_START
 };
