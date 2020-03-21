@@ -297,13 +297,13 @@ void runEmu()
 	}
 
 	// No rendering emulation (to purely benchmark CPU)
-	skipRendering = isJoyButtonPressed(JOY_BUTTON_RPAD);
+	skipRendering = isJoyButtonPressed(JOY_BUTTON_LPAD);
 
 	// Pause CPU execution (to benchmark rendering of the last frame only);
-	//skipCPU = isJoyButtonPressed(JOY_BUTTON_LPAD);
+	//skipCPU = isJoyButtonPressed(JOY_BUTTON_RPAD);
 
 	// I will steal this button to toggle between the more accurate and the faster renderer
-	if (isJoyButtonPressedOnce(JOY_BUTTON_LPAD)) {
+	if (isJoyButtonPressedOnce(JOY_BUTTON_RPAD)) {
 		uint16 color = 0;
 		if (renderer == RENDERER_PER_LINE) {
 			color = MakeRGB15(7, 31, 15);
@@ -354,6 +354,50 @@ int returnStringLength(char *str)
 		++i;
 	}
 	return -1;
+}
+
+void showHelpScreen()
+{
+	const uint16 titleColor = MakeRGB15(31, 24, 15);
+	const uint16 textColor = MakeRGB15(24, 28, 31);
+	const uint16 specialColor = MakeRGB15(7, 31, 7);
+	const uint16 bluerColor = MakeRGB15(7, 15, 31);
+	const uint16 bugoColor = MakeRGB15(31, 15, 7);
+
+	while(!wasAnyJoyButtonPressed()) {
+
+		updateInput();
+
+		setTextColor(titleColor);
+		drawTextX2(32, 16, "Not So LameNES");
+		drawTextX2(32, 32, "--------------");
+
+		setTextColor(textColor);
+		drawText(8, 64, "Here are the instructions..");
+
+		setTextColor(specialColor);	drawText(0, 80, "DPAD, A, B, select start");
+		setTextColor(textColor);	drawText(8, 88, "matches the NES gamepad");
+
+		setTextColor(specialColor);	drawText(0, 104, "Press C");
+		setTextColor(textColor);	drawText(8, 112, "toggle between 0-3 frameskip");
+									drawText(8, 120, "look dots on the lower left");
+
+		setTextColor(specialColor);	drawText(0, 136, "Hold LPAD");
+		setTextColor(textColor);	drawText(8, 144, "pauses rendering (CPU only running)");
+
+		setTextColor(specialColor);	drawText(0, 160, "Press RPAD");
+		setTextColor(textColor);	drawText(8, 168, "switch faster renderer (incompatible)");
+									drawText(8, 176, "Works with Mario but fails with rest");
+									drawText(8, 184, "dot in upper right if fast renderer on");
+
+		setTextColor(bluerColor);
+		drawText(8, 204, "That's all folks!");
+		drawText(16, 212, "Press any button to continue!");
+		setTextColor(bugoColor); drawText(96, 230, "Bugo the Cat signing off..");
+
+		displayScreen();
+	}
+	clearAllBuffers();
 }
 
 char *selectFileFromMenu()
@@ -508,10 +552,13 @@ void initEmu()
 	// vblank int cycle timeout
 	unsigned int NTSC_VBLANK_CYCLE_TIMEOUT = (NTSC_TOTAL_HEIGHT-NTSC_HEIGHT) * NTSC_VBLANK_INT / NTSC_TOTAL_HEIGHT;
 	unsigned int PAL_VBLANK_CYCLE_TIMEOUT = (PAL_TOTAL_HEIGHT-PAL_HEIGHT) * PAL_VBLANK_INT / PAL_TOTAL_HEIGHT;
+	
+	char *filename = NULL;
+	
 
+	showHelpScreen();
 
-	char *filename = selectFileFromMenu();
-
+	filename = selectFileFromMenu();
 	if (filename) {
 		initLoad(filename);
 	} else {
