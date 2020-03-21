@@ -88,6 +88,11 @@ void initFonts()
 	fontsAreReady = true;
 }
 
+void setTextColor(uint16 color)
+{
+	fontsPal[31] = color;
+}
+
 void initTools()
 {
 	initTimer();

@@ -19,6 +19,7 @@ void initTools(void);
 void drawText(int xtp, int ytp, char *text);
 void drawZoomedText(int xtp, int ytp, char *text, int zoom);
 void drawNumber(int xtp, int ytp, int num);
+void setTextColor(uint16 color);
 
 void displayFPS(void);
 void displayMem(void);

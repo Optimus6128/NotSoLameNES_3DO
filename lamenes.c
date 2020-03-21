@@ -56,9 +56,9 @@
 #include "3DO/system_graphics.h"
 #include "3DO/tools.h"
 
-char *romsDirectory = "Roms";
-uint32 fileCount;
-char fileStr[16][20];
+#define MAX_FILES_NUM 1024
+#define MAX_FILENAME_LENGTH 256
+
 
 char romfn[256];
 
@@ -340,42 +340,106 @@ void runEmu()
 	}
 }
 
+int returnStringLength(char *str)
+{
+	int i = 0;
+	while (i < MAX_FILENAME_LENGTH) {
+		if (*str++ == 0) return i;
+	}
+	return -1;
+}
+
 char *selectFileFromMenu()
 {
+	int i;
+	char *romsDirectory = "Roms";
+	uint32 fileCount;
+	char *fileStr[MAX_FILES_NUM];
+
 	Directory      *dir;
 	DirectoryEntry  de;
 	char *selectedRom = NULL;
+	char dirRom[MAX_FILENAME_LENGTH + 4 + 1];
 
 	Item dirItem = OpenDiskFile(romsDirectory);
+	int selectIndex = 0;
+	const int maxFilesPerScreen = 30;
+	bool firstUpdate = true;
+	
 
+	// Read all the files from the Roms directory
     dir = OpenDirectoryItem(dirItem);
-
 	fileCount = 0;
-	while (ReadDirectory(dir, &de) >= 0)
+	while (ReadDirectory(dir, &de) >= 0 && fileCount < MAX_FILES_NUM)
 	{
 		if (!(de.de_Flags & FILE_IS_DIRECTORY)) {
-			sprintf(fileStr[fileCount], "%s\n", de.de_FileName);
-			fileCount++;
+			const int fileStrLen = returnStringLength(de.de_FileName);
+			if (fileStrLen > 0 && fileStrLen <= MAX_FILENAME_LENGTH) {
+				fileStr[fileCount] = (char*)AllocMem(fileStrLen, MEMTYPE_TRACKSIZE);
+				sprintf(fileStr[fileCount], "%s\0", de.de_FileName);
+				fileCount++;
+			}
 		}
 	}
 	CloseDirectory(dir);
 
+	// Main rom selection menu
 	while(!selectedRom) {
-		int i;
-		for (i=0; i<fileCount; ++i) {
-			drawText(0, 8 + i*8, fileStr[i]);
-		}
-		
-		displayScreen();
+		int maxSelectIndex = maxFilesPerScreen;
+		if (maxSelectIndex > fileCount-1) maxSelectIndex = fileCount-1;
 
 		updateInput();
+
+		if (isJoyButtonPressedOnce(JOY_BUTTON_DOWN)) {
+			if (selectIndex < maxSelectIndex-1) ++selectIndex;
+		}
+		if (isJoyButtonPressedOnce(JOY_BUTTON_UP)) {
+			if (selectIndex > 0) --selectIndex;
+		}
+		if (isJoyButtonPressedOnce(JOY_BUTTON_LPAD)) {
+			selectIndex -= maxFilesPerScreen;
+			if (selectIndex < 0) selectIndex = 0;
+		}
+		if (isJoyButtonPressedOnce(JOY_BUTTON_RPAD)) {
+			selectIndex += maxFilesPerScreen;
+			if (selectIndex > maxSelectIndex-1) selectIndex = maxSelectIndex-1;
+		}
 		if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
-			selectedRom = "rom.nes";
+			selectedRom = fileStr[fileCount];
+		}
+
+		if (wasAnyJoyButtonPressed() || firstUpdate) {
+			for (i=0; i<maxFilesPerScreen; ++i) {
+
+				uint16 color = MakeRGB15(15, 15, 15);
+				if (selectIndex == i) {
+					color = MakeRGB15(31, 31, 31);
+				}
+
+				if (i < maxSelectIndex) {
+					setTextColor(color);
+					drawText(0, i*8, "oof"/*fileStr[i]*/);
+				}
+			}
+
+			displayScreen();
+			firstUpdate = false;
 		}
 	}
+	return "rom.nes";
+
+
 	clearAllBuffers();
 
-	return selectedRom;
+	// Create the full rom folder/file string
+	sprintf(dirRom, "%s/%s\0", romsDirectory, selectedRom);
+
+	// Free all the filename strings allocated
+	for (i=0; i<fileCount; ++i) {
+		FreeMem(fileStr[i], -1);
+	}
+
+	return dirRom;
 }
 
 void initLoad(char *filename)
@@ -476,10 +540,12 @@ void initEmu()
 		vblank_cycle_timeout = NTSC_VBLANK_CYCLE_TIMEOUT;
 		scanline_refresh = NTSC_SCANLINE_REFRESH;
 	}
+
+	setShowFps(true);
 }
 
 int main()
 {
-	coreInit(initEmu, CORE_VRAM_SINGLEBUFFER | CORE_SHOW_FPS | CORE_NO_CLEAR_FRAME | /*CORE_SHOW_MEM |*/ CORE_NO_VSYNC);
+	coreInit(initEmu, CORE_VRAM_SINGLEBUFFER | CORE_NO_CLEAR_FRAME | CORE_NO_VSYNC);
 	coreRun(runEmu);
 }

@@ -66,6 +66,21 @@ void displaySystemInfo()
 	if (showBuffers) displayBuffers();
 }
 
+void setShowFps(bool on)
+{
+	showFps = on;
+}
+
+void setShowMem(bool on)
+{
+	showMem = on;
+}
+
+void setShowBuffers(bool on)
+{
+	showBuffers = on;
+}
+
 void coreRun(void(*mainLoopFunc)())
 {
 	while(true)
