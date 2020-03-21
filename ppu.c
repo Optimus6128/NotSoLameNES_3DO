@@ -42,19 +42,12 @@
 #include "romloader.h"
 #include "memory.h"
 
-//#define MEMORY_SACRIFICE
-#ifdef MEMORY_SACRIFICE
-	#define attribTabNum 4
-#else
-	#define attribTabNum 1
-	uint32 attribBitsTab[4];
-#endif
-
 // gfx cache -> [hor][ver]
 unsigned char sprcache[256+8][240];
 unsigned char shouldCheckSprCache[240];
 
-uint32 tilemix[attribTabNum][256][256];
+uint32 attribBitsTab[4];
+uint32 tilemix[256][256];
 uint32 xy_scroll_tab[2][64];
 uint32 palmap32[256];
 
@@ -88,22 +81,16 @@ unsigned int ppu_bgscr_f = 0x00;
 
 void init_ppu()
 {
-	int i,j,a,b;
-	for (a=0; a<attribTabNum; ++a) {
-		for (i=0; i<256; ++i) {
-			for (j=0; j<256; ++j) {
-				uint32 *tilemixPtr = &tilemix[a][i][j];
-				for (b=0; b<8; ++b) {
-					int c = (((i >> (7-b)) & 1) << 1) | ((j >> (7-b)) & 1);
-					#ifdef MEMORY_SACRIFICE
-						if (c!=0) c |= (a << 2);
-					#else
-						if (c!=0) c |= (3 << 2);
-					#endif
-					*tilemixPtr = *tilemixPtr | (c << (28 - (b << 2)));
-				}
-				tilemixPtr++;
+	int i,j,b;
+	for (i=0; i<256; ++i) {
+		for (j=0; j<256; ++j) {
+			uint32 *tilemixPtr = &tilemix[i][j];
+			for (b=0; b<8; ++b) {
+				int c = (((i >> (7-b)) & 1) << 1) | ((j >> (7-b)) & 1);
+				if (c!=0) c |= (3 << 2);
+				*tilemixPtr = *tilemixPtr | (c << (28 - (b << 2)));
 			}
+			tilemixPtr++;
 		}
 	}
 
@@ -113,11 +100,9 @@ void init_ppu()
 		}
 	}
 
-	#ifndef MEMORY_SACRIFICE
-		for (i=0; i<4; ++i) {
-			attribBitsTab[i] = 0x33333333 | (i << 2) | (i << 6) | (i << 10) | (i << 14) | (i << 18) | (i << 22) | (i << 26) | (i << 30);
-		}
-	#endif
+	for (i=0; i<4; ++i) {
+		attribBitsTab[i] = 0x33333333 | (i << 2) | (i << 6) | (i << 10) | (i << 14) | (i << 18) | (i << 22) | (i << 26) | (i << 30);
+	}
 }
 
 int mw_ppu_0x2000 = 0;
@@ -392,15 +377,9 @@ void render_background(int scanline)
 	for(tile_count = 0; tile_count < 33; tile_count++)
 	{
 		const int at_addr_off = at_addr + (x_scroll >> 2);
-		#ifndef MEMORY_SACRIFICE
-			const int attribs = (ppu_memory[at_addr_off] >> *xy_scroll_pair++) & 3;
-			const uint32 *tilemixAttribOffset = (uint32*)&tilemix[0];
-			const uint32 attribBits = attribBitsTab[attribs];
-		#else
-			const int attribs = (ppu_memory[at_addr_off] >> *xy_scroll_pair++) & 3;
-			const uint32 *tilemixAttribOffset = (uint32*)&tilemix[attribs];
-			const uint32 attribBits = 0xFFFFFFFF;
-		#endif
+		const int attribs = (ppu_memory[at_addr_off] >> *xy_scroll_pair++) & 3;
+		const uint32 *tilemixAttribOffset = (uint32*)tilemix;
+		const uint32 attribBits = attribBitsTab[attribs];
 
 		pt_addr = (ppu_memory[nt_addr] << 4) + pt_addr_off;
 
