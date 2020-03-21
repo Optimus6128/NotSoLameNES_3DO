@@ -32,6 +32,8 @@
 /*
  * mmc1.h - NES Mapper 1: MMC1
  */
+ 
+#include "string.h"
 
 int mmc1_PRGROM_area_switch;
 int mmc1_PRGROM_bank_switch;

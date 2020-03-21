@@ -59,4 +59,8 @@ extern long romlen;
 
 extern void set_input();
 
+extern int mmc3_irq_counter;
+extern int mmc3_irq_enable;
+extern void mmc3_reset(void);
+
 #endif

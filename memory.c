@@ -35,6 +35,13 @@
 #include "lame6502.h"
 #include "macros.h"
 #include "lamenes.h"
+#include "romloader.h"
+
+// included mappers
+#include "mappers/mmc1.h"	// 1
+#include "mappers/unrom.h"	// 2
+#include "mappers/cnrom.h"	// 3
+#include "mappers/mmc3.h"	// 4
 
 char *savfile;
 char *statefile;
@@ -415,28 +422,29 @@ void write_memory(unsigned int address,unsigned char data)
 
 	if (DEBUG_MEM_FREQS) mw_other++;
 
-	// Disable the mappers for now to optimize thing for the single ROM I am trying
-	// I will handle this whole memory_write/read calls in a more optimized way in the future anyway
-/*
-	if(MAPPER == 1) {
-		mmc1_access(address,data);
+	if (MAPPER==0) {
+		memory[address] = data;
 		return;
 	}
 
-	if(MAPPER == 2) {
-		unrom_access(address,data);
-		return;
-	}
+	switch(MAPPER) {
+		case 1:
+			mmc1_access(address,data);
+		break;
 
-	if(MAPPER == 3) {
-		cnrom_access(address,data);
-		return;
-	}
+		case 2:
+			unrom_access(address,data);
+		break;
+		
+		case 3:
+			cnrom_access(address,data);
+		break;
+		
+		case 4:
+			mmc3_access(address,data);
+		break;
 
-	if(MAPPER == 4) {
-		mmc3_access(address,data);
-		return;
+		default:
+		break;
 	}
-	*/
-	memory[address] = data;
 }

@@ -45,12 +45,6 @@
 #include "nes_input.h"
 #include "memory.h"
 
-// included mappers
-#include "mappers/mmc1.h"	// 1
-#include "mappers/unrom.h"	// 2
-#include "mappers/cnrom.h"	// 3
-#include "mappers/mmc3.h"	// 4
-
 #include "3DO/core.h"
 #include "3DO/input.h"
 #include "3DO/system_graphics.h"
@@ -345,6 +339,7 @@ int returnStringLength(char *str)
 	int i = 0;
 	while (i < MAX_FILENAME_LENGTH) {
 		if (*str++ == 0) return i;
+		++i;
 	}
 	return -1;
 }
@@ -366,6 +361,8 @@ char *selectFileFromMenu()
 	const int maxFilesPerScreen = 30;
 	bool firstUpdate = true;
 	
+	const uint16 colorWhite = MakeRGB15(31, 31, 31);
+	const uint16 colorGrey = MakeRGB15(15, 15, 15);
 
 	// Read all the files from the Roms directory
     dir = OpenDirectoryItem(dirItem);
@@ -387,6 +384,7 @@ char *selectFileFromMenu()
 	while(!selectedRom) {
 		int maxSelectIndex = maxFilesPerScreen;
 		if (maxSelectIndex > fileCount-1) maxSelectIndex = fileCount-1;
+		if (maxSelectIndex < 0) maxSelectIndex = 0;
 
 		updateInput();
 
@@ -405,20 +403,20 @@ char *selectFileFromMenu()
 			if (selectIndex > maxSelectIndex-1) selectIndex = maxSelectIndex-1;
 		}
 		if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
-			selectedRom = fileStr[fileCount];
+			selectedRom = fileStr[selectIndex];
 		}
 
 		if (wasAnyJoyButtonPressed() || firstUpdate) {
 			for (i=0; i<maxFilesPerScreen; ++i) {
 
-				uint16 color = MakeRGB15(15, 15, 15);
+				uint16 color = colorGrey;
 				if (selectIndex == i) {
-					color = MakeRGB15(31, 31, 31);
+					color = colorWhite;
 				}
 
 				if (i < maxSelectIndex) {
 					setTextColor(color);
-					drawText(0, i*8, "oof"/*fileStr[i]*/);
+					drawText(0, i*8, fileStr[i]);
 				}
 			}
 
@@ -426,10 +424,10 @@ char *selectFileFromMenu()
 			firstUpdate = false;
 		}
 	}
-	return "rom.nes";
 
 
 	clearAllBuffers();
+	setTextColor(colorWhite);
 
 	// Create the full rom folder/file string
 	sprintf(dirRom, "%s/%s\0", romsDirectory, selectedRom);
@@ -540,12 +538,10 @@ void initEmu()
 		vblank_cycle_timeout = NTSC_VBLANK_CYCLE_TIMEOUT;
 		scanline_refresh = NTSC_SCANLINE_REFRESH;
 	}
-
-	setShowFps(true);
 }
 
 int main()
 {
-	coreInit(initEmu, CORE_VRAM_SINGLEBUFFER | CORE_NO_CLEAR_FRAME | CORE_NO_VSYNC);
+	coreInit(initEmu, CORE_VRAM_SINGLEBUFFER | CORE_NO_CLEAR_FRAME | CORE_SHOW_FPS | CORE_NO_VSYNC);
 	coreRun(runEmu);
 }
