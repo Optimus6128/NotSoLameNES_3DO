@@ -60,60 +60,66 @@ void SET_SR(unsigned char b);
  * instructions.h - 6502 cpu instruction macros
  */
 
-#define ADC_IM(CYCLES)		{ addr = memory[program_counter]; \
-					tmp = accumulator + addr + (carry_flag ? 1 : 0); \
-					carry_flag = (tmp & 0x100) >> 8; \
-					accumulator = tmp & 0xFF; \
+#define ADC_IM(CYCLES)		{ val = memory[program_counter]; \
+					res = accumulator + val + carry_flag; \
+					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
+					carry_flag = (res & 0x100) >> 8; \
+					accumulator = res & 0xFF; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
 					program_counter++; \
 					cycle_count -= CYCLES; \
 					break; }
 
-#define ADC_ZP(CYCLES)		{ addr = memory_read(memory[program_counter]); \
-					tmp = accumulator + addr + (carry_flag ? 1 : 0); \
-					carry_flag = (tmp & 0x100) >> 8; \
-					accumulator = tmp & 0xFF; \
+#define ADC_ZP(CYCLES)		{ val = memory_read(memory[program_counter]); \
+					res = accumulator + val + carry_flag; \
+					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
+					carry_flag = (res & 0x100) >> 8; \
+					accumulator = res & 0xFF; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
 					program_counter++; \
 					cycle_count -= CYCLES; \
 					break; }
 
-#define ADC_ZPIX(CYCLES)	{ addr = memory_read(memory[program_counter] + x_reg); \
-					tmp = accumulator + addr + (carry_flag ? 1 : 0); \
-					carry_flag = (tmp & 0x100) >> 8; \
-					accumulator = tmp & 0xFF; \
+#define ADC_ZPIX(CYCLES)	{ val = memory_read(memory[program_counter] + x_reg); \
+					res = accumulator + val + carry_flag; \
+					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
+					carry_flag = (res & 0x100) >> 8; \
+					accumulator = res & 0xFF; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
 					program_counter++; \
 					cycle_count -= CYCLES; \
 					break; }
 
-#define ADC_A(CYCLES)		{ addr = memory_read((memory[program_counter+1] << 8) | memory[program_counter]); \
-					tmp = accumulator + addr + (carry_flag ? 1 : 0); \
-					carry_flag = (tmp & 0x100) >> 8; \
-					accumulator = tmp & 0xFF; \
+#define ADC_A(CYCLES)		{ val = memory_read((memory[program_counter+1] << 8) | memory[program_counter]); \
+					res = accumulator + val + carry_flag; \
+					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
+					carry_flag = (res & 0x100) >> 8; \
+					accumulator = res & 0xFF; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
 					program_counter+=2; \
 					cycle_count -= CYCLES; \
 					break; }
 
-#define ADC_AIX(CYCLES)		{ addr = memory_read(((memory[program_counter+1] << 8) | memory[program_counter]) + x_reg); \
-					tmp = accumulator + addr + (carry_flag ? 1 : 0); \
-					carry_flag = (tmp & 0x100) >> 8; \
-					accumulator = tmp & 0xFF; \
+#define ADC_AIX(CYCLES)		{ val = memory_read(((memory[program_counter+1] << 8) | memory[program_counter]) + x_reg); \
+					res = accumulator + val + carry_flag; \
+					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
+					carry_flag = (res & 0x100) >> 8; \
+					accumulator = res & 0xFF; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
 					program_counter+=2; \
 					cycle_count -= CYCLES; \
 					break; }
 
-#define ADC_AIY(CYCLES)		{ addr = memory_read(((memory[program_counter+1] << 8) | memory[program_counter]) + y_reg); \
-					tmp = accumulator + addr + (carry_flag ? 1 : 0); \
-					carry_flag = (tmp & 0x100) >> 8; \
-					accumulator = tmp & 0xFF; \
+#define ADC_AIY(CYCLES)		{ val = memory_read(((memory[program_counter+1] << 8) | memory[program_counter]) + y_reg); \
+					res = accumulator + val + carry_flag; \
+					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
+					carry_flag = (res & 0x100) >> 8; \
+					accumulator = res & 0xFF; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
 					program_counter+=2; \
@@ -121,10 +127,11 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define ADC_IDI(CYCLES)	{ addr = memory_read(memory[program_counter] + x_reg); \
-					tmp = (memory[addr + 1] << 8) | memory[addr]; \
-					tmp3 = accumulator + memory_read(tmp) + (carry_flag ? 1 : 0); \
-					carry_flag = (tmp & 0x100) >> 8; \
-					accumulator = tmp3 & 0xFF; \
+					val = memory_read((memory[addr + 1] << 8) | memory[addr]); \
+					res = accumulator + val + carry_flag; \
+					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
+					carry_flag = (res & 0x100) >> 8; \
+					accumulator = res & 0xFF; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
 					program_counter++; \
@@ -132,10 +139,11 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define ADC_INI(CYCLES)	{ addr = memory[program_counter]; \
-					tmp = ((memory[addr + 1] << 8) | memory[addr]) + y_reg; \
-					tmp3 = accumulator + memory_read(tmp) + (carry_flag ? 1 : 0); \
-					carry_flag = (tmp & 0x100) >> 8; \
-					accumulator = tmp3 & 0xFF; \
+					val = memory_read(((memory[addr + 1] << 8) | memory[addr]) + y_reg); \
+					res = accumulator + val + carry_flag; \
+					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
+					carry_flag = (res & 0x100) >> 8; \
+					accumulator = res & 0xFF; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
 					program_counter++; \

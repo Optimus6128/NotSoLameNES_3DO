@@ -44,6 +44,9 @@ extern unsigned char accumulator;
 extern unsigned int addr;
 extern unsigned int tmp, tmp2, tmp3;
 
+extern unsigned int val;
+extern unsigned int res;
+
 extern int zero_flag;
 extern int sign_flag;
 extern int overflow_flag;

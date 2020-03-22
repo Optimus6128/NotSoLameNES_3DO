@@ -63,6 +63,9 @@ unsigned char accumulator;	/* core */
 unsigned int addr;
 unsigned int tmp, tmp2, tmp3;
 
+unsigned int val;
+unsigned int res;
+
 
 /* status_register flags */
 int zero_flag;		/* this is set if the last operation returned a result of zero */
