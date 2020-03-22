@@ -71,7 +71,7 @@ void SET_SR(unsigned char b);
 					cycle_count -= CYCLES; \
 					break; }
 
-#define ADC_ZP(CYCLES)		{ val = memory_read(memory[program_counter]); \
+#define ADC_ZP(CYCLES)		{ val = memory[memory[program_counter]]; \
 					res = accumulator + val + carry_flag; \
 					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
 					carry_flag = (res & 0x100) >> 8; \
@@ -82,7 +82,7 @@ void SET_SR(unsigned char b);
 					cycle_count -= CYCLES; \
 					break; }
 
-#define ADC_ZPIX(CYCLES)	{ val = memory_read(memory[program_counter] + x_reg); \
+#define ADC_ZPIX(CYCLES)	{ val = memory[memory[program_counter] + x_reg]; \
 					res = accumulator + val + carry_flag; \
 					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
 					carry_flag = (res & 0x100) >> 8; \
@@ -93,7 +93,7 @@ void SET_SR(unsigned char b);
 					cycle_count -= CYCLES; \
 					break; }
 
-#define ADC_A(CYCLES)		{ val = memory_read((memory[program_counter+1] << 8) | memory[program_counter]); \
+#define ADC_A(CYCLES)		{ val = memory[(memory[program_counter+1] << 8) | memory[program_counter]]; \
 					res = accumulator + val + carry_flag; \
 					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
 					carry_flag = (res & 0x100) >> 8; \
@@ -104,7 +104,7 @@ void SET_SR(unsigned char b);
 					cycle_count -= CYCLES; \
 					break; }
 
-#define ADC_AIX(CYCLES)		{ val = memory_read(((memory[program_counter+1] << 8) | memory[program_counter]) + x_reg); \
+#define ADC_AIX(CYCLES)		{ val = memory[((memory[program_counter+1] << 8) | memory[program_counter]) + x_reg]; \
 					res = accumulator + val + carry_flag; \
 					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
 					carry_flag = (res & 0x100) >> 8; \
@@ -115,7 +115,7 @@ void SET_SR(unsigned char b);
 					cycle_count -= CYCLES; \
 					break; }
 
-#define ADC_AIY(CYCLES)		{ val = memory_read(((memory[program_counter+1] << 8) | memory[program_counter]) + y_reg); \
+#define ADC_AIY(CYCLES)		{ val = memory[((memory[program_counter+1] << 8) | memory[program_counter]) + y_reg]; \
 					res = accumulator + val + carry_flag; \
 					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
 					carry_flag = (res & 0x100) >> 8; \
@@ -126,8 +126,8 @@ void SET_SR(unsigned char b);
 					cycle_count -= CYCLES; \
 					break; }
 
-#define ADC_IDI(CYCLES)	{ addr = memory_read(memory[program_counter] + x_reg); \
-					val = memory_read((memory[addr + 1] << 8) | memory[addr]); \
+#define ADC_IDI(CYCLES)	{ addr = memory[memory[program_counter] + x_reg]; \
+					val = memory[(memory[addr + 1] << 8) | memory[addr]]; \
 					res = accumulator + val + carry_flag; \
 					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
 					carry_flag = (res & 0x100) >> 8; \
@@ -139,7 +139,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define ADC_INI(CYCLES)	{ addr = memory[program_counter]; \
-					val = memory_read(((memory[addr + 1] << 8) | memory[addr]) + y_reg); \
+					val = memory[((memory[addr + 1] << 8) | memory[addr]) + y_reg]; \
 					res = accumulator + val + carry_flag; \
 					overflow_flag = (~(accumulator ^ val)) & (accumulator ^ res) & 0x80; \
 					carry_flag = (res & 0x100) >> 8; \
@@ -158,7 +158,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define AND_ZP(CYCLES)		{ addr = memory[program_counter]; \
-					accumulator &= memory_read(addr); \
+					accumulator &= memory[addr]; \
 					program_counter ++; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -166,7 +166,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define AND_ZPIX(CYCLES)	{ addr = memory[program_counter] + x_reg; \
-					accumulator &= memory_read(addr); \
+					accumulator &= memory[addr]; \
 					program_counter ++; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -174,7 +174,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define AND_A(CYCLES)		{ addr = (memory[program_counter+1] << 8) | memory[program_counter]; \
-					accumulator &= memory_read(addr); \
+					accumulator &= memory[addr]; \
 					program_counter += 2; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -183,7 +183,7 @@ void SET_SR(unsigned char b);
 
 #define AND_AIX(CYCLES)		{ tmp = (memory[program_counter+1] << 8) | memory[program_counter]; \
 					addr = tmp + x_reg; \
-					accumulator &= memory_read(addr); \
+					accumulator &= memory[addr]; \
 					program_counter += 2; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -192,7 +192,7 @@ void SET_SR(unsigned char b);
 
 #define AND_AIY(CYCLES)		{ tmp = (memory[program_counter+1] << 8) | memory[program_counter]; \
 					addr = tmp + y_reg; \
-					accumulator &= memory_read(addr); \
+					accumulator &= memory[addr]; \
 					program_counter += 2; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -201,7 +201,7 @@ void SET_SR(unsigned char b);
 
 #define AND_IDI(CYCLES)		{ addr = memory[program_counter] + x_reg; \
 					tmp = ((memory[addr + 1] << 8) | memory[addr]); \
-					accumulator &= memory_read(tmp); \
+					accumulator &= memory[tmp]; \
 					program_counter ++; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -210,7 +210,7 @@ void SET_SR(unsigned char b);
 
 #define AND_INI(CYCLES)		{ addr = memory[program_counter]; \
 					tmp = ((memory[addr + 1] << 8) | memory[addr]) + y_reg; \
-					accumulator &= memory_read(tmp); \
+					accumulator &= memory[tmp]; \
 					program_counter ++; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -225,7 +225,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define ARITH_SL_ZP(CYCLES)	{ tmp = memory[program_counter]; \
-					addr = memory_read(tmp); \
+					addr = memory[tmp]; \
 					carry_flag = (carry_flag & 0xfe) | ((addr >> 7) & 0x01); \
 					addr = addr << 1; \
 					write_memory(tmp,addr); \
@@ -236,7 +236,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define ARITH_SL_ZPIX(CYCLES)	{ tmp = memory[program_counter] + x_reg; \
-					addr = memory_read(tmp); \
+					addr = memory[tmp]; \
 					carry_flag = (carry_flag & 0xfe) | ((addr >> 7) & 0x01); \
 					addr = addr << 1; \
 					write_memory(tmp,addr); \
@@ -247,7 +247,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define ARITH_SL_A(CYCLES)	{ tmp = (memory[program_counter+1] << 8) | memory[program_counter]; \
-					addr = memory_read(tmp); \
+					addr = memory[tmp]; \
 					carry_flag = (carry_flag & 0xfe) | ((addr >> 7) & 0x01); \
 					addr = addr << 1; \
 					write_memory(tmp,addr); \
@@ -258,7 +258,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define ARITH_SL_AIX(CYCLES)	{ tmp = ((memory[program_counter+1] << 8) | memory[program_counter]) + x_reg; \
-					addr = memory_read(tmp); \
+					addr = memory[tmp]; \
 					carry_flag = (carry_flag & 0xfe) | ((addr >> 7) & 0x01); \
 					addr = addr << 1; \
 					write_memory(tmp,addr); \
@@ -284,7 +284,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define BIT_TEST_ZP(CYCLES)	{ addr = memory[program_counter]; \
-					tmp = memory_read(addr); \
+					tmp = memory[addr]; \
 					tmp2 = tmp & accumulator; \
 					sign_flag = tmp & 0x80; \
 					overflow_flag = ((tmp & 0x40) != 0); \
@@ -294,7 +294,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define BIT_TEST_A(CYCLES)	{ addr = (memory[program_counter+1] << 8) | memory[program_counter]; \
-					tmp = memory_read(addr); \
+					tmp = memory[addr]; \
 					tmp2 = tmp & accumulator; \
 					sign_flag = tmp & 0x80; \
 					overflow_flag = ((tmp & 0x40) != 0); \
@@ -359,7 +359,7 @@ void SET_SR(unsigned char b);
 						break; }
 
 #define COMP_MEM_ZP(REG,CYCLES)		{ addr = memory[program_counter]; \
-						tmp = memory_read(addr); \
+						tmp = memory[addr]; \
 						carry_flag = (REG >= tmp) ? 1 : 0; \
 						sign_flag = ((signed char)REG < (signed char)tmp) ? 1 : 0; \
 						zero_flag = (REG == tmp) ? 1 : 0; \
@@ -368,7 +368,7 @@ void SET_SR(unsigned char b);
 						break; }
 
 #define COMP_MEM_ZPIX(REG,CYCLES)	{ addr = memory[program_counter] + x_reg; \
-						tmp = memory_read(addr); \
+						tmp = memory[addr]; \
 						carry_flag = (REG >= tmp) ? 1 : 0; \
 						sign_flag = ((signed char)REG < (signed char)tmp) ? 1 : 0; \
 						zero_flag = (REG == tmp) ? 1 : 0; \
@@ -377,7 +377,7 @@ void SET_SR(unsigned char b);
 						break; }
 
 #define COMP_MEM_A(REG,CYCLES)		{ addr = (memory[program_counter+1] << 8) | memory[program_counter]; \
-						tmp = memory_read(addr); \
+						tmp = memory[addr]; \
 						carry_flag = (REG >= tmp) ? 1 : 0; \
 						sign_flag = ((signed char)REG < (signed char)tmp) ? 1 : 0; \
 						zero_flag = (REG == tmp) ? 1 : 0; \
@@ -386,7 +386,7 @@ void SET_SR(unsigned char b);
 						break; }
 
 #define COMP_MEM_AIX(REG,CYCLES)	{ addr = ((memory[program_counter+1] << 8) | memory[program_counter]) + x_reg; \
-						tmp = memory_read(addr); \
+						tmp = memory[addr]; \
 						carry_flag = (REG >= tmp) ? 1 : 0; \
 						sign_flag = ((signed char)REG < (signed char)tmp) ? 1 : 0; \
 						zero_flag = (REG == tmp) ? 1 : 0; \
@@ -395,7 +395,7 @@ void SET_SR(unsigned char b);
 						break; }
 
 #define COMP_MEM_AIY(REG,CYCLES)	{ addr = ((memory[program_counter+1] << 8) | memory[program_counter]) + y_reg; \
-						tmp = memory_read(addr); \
+						tmp = memory[addr]; \
 						carry_flag = (REG >= tmp) ? 1 : 0; \
 						sign_flag = ((signed char)REG < (signed char)tmp) ? 1 : 0; \
 						zero_flag = (REG == tmp) ? 1 : 0; \
@@ -422,7 +422,7 @@ void SET_SR(unsigned char b);
 						break; }
 
 #define DECR_MEM_ZP(CYCLES)	{ addr = memory[program_counter]; \
-					tmp = memory_read(addr) - 1; \
+					tmp = memory[addr] - 1; \
 					write_memory(addr,tmp); \
 					sign_flag = memory[addr] & 0x80; \
 					zero_flag = !(memory[addr]); \
@@ -431,7 +431,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define DECR_MEM_ZPIX(CYCLES)	{ addr = memory[program_counter] + x_reg; \
-					tmp = memory_read(addr) - 1; \
+					tmp = memory[addr] - 1; \
 					write_memory(addr,tmp); \
 					sign_flag = memory[addr] & 0x80; \
 					zero_flag = !(memory[addr]); \
@@ -440,7 +440,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define DECR_MEM_A(CYCLES)	{ addr = (memory[program_counter+1] << 8) | memory[program_counter]; \
-					tmp = memory_read(addr) - 1; \
+					tmp = memory[addr] - 1; \
 					write_memory(addr,tmp); \
 					sign_flag = memory[addr] & 0x80; \
 					zero_flag = !(memory[addr]); \
@@ -449,7 +449,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define DECR_MEM_AIX(CYCLES)	{ addr = ((memory[program_counter+1] << 8) | memory[program_counter]) + x_reg; \
-					tmp = memory_read(addr) - 1; \
+					tmp = memory[addr] - 1; \
 					write_memory(addr,tmp); \
 					sign_flag = memory[addr] & 0x80; \
 					zero_flag = !(memory[addr]); \
@@ -471,7 +471,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define EXCL_OR_MEM_ZP(CYCLES)	{ addr = memory[program_counter]; \
-					accumulator ^= memory_read(addr); \
+					accumulator ^= memory[addr]; \
 					program_counter ++; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -479,7 +479,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define EXCL_OR_MEM_ZPIX(CYCLES)	{ addr = memory[program_counter] + x_reg; \
-						accumulator ^= memory_read(addr); \
+						accumulator ^= memory[addr]; \
 						program_counter ++; \
 						sign_flag = accumulator & 0x80; \
 						zero_flag = !(accumulator); \
@@ -487,7 +487,7 @@ void SET_SR(unsigned char b);
 						break; }
 
 #define EXCL_OR_MEM_A(CYCLES)	{ addr = (memory[program_counter+1] << 8) | memory[program_counter]; \
-					accumulator ^= memory_read(addr); \
+					accumulator ^= memory[addr]; \
 					program_counter += 2; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -495,7 +495,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define EXCL_OR_MEM_AIX(CYCLES)	{ addr = ((memory[program_counter+1] << 8) | memory[program_counter]) + x_reg; \
-					accumulator ^= memory_read(addr); \
+					accumulator ^= memory[addr]; \
 					program_counter += 2; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -503,7 +503,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define EXCL_OR_MEM_AIY(CYCLES)	{ addr = ((memory[program_counter+1] << 8) | memory[program_counter]) + y_reg; \
-					accumulator ^= memory_read(addr); \
+					accumulator ^= memory[addr]; \
 					program_counter += 2; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -512,7 +512,7 @@ void SET_SR(unsigned char b);
 
 #define EXCL_OR_MEM_IDI(CYCLES)	{ addr = memory[program_counter] + x_reg; \
 					tmp = (memory[addr + 1] << 8) | memory[addr]; \
-					accumulator ^= memory_read(tmp); \
+					accumulator ^= memory[tmp]; \
 					program_counter ++; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -521,7 +521,7 @@ void SET_SR(unsigned char b);
 
 #define EXCL_OR_MEM_INI(CYCLES)	{ addr = memory[program_counter]; \
 					tmp = ((memory[addr + 1] << 8) | memory[addr]) + y_reg; \
-					accumulator ^= memory_read(tmp); \
+					accumulator ^= memory[tmp]; \
 					program_counter ++; \
 					sign_flag = accumulator & 0x80; \
 					zero_flag = !(accumulator); \
@@ -529,7 +529,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define INCR_MEM_ZP(CYCLES)	{ addr = memory[program_counter]; \
-					tmp = memory_read(addr) + 1; \
+					tmp = memory[addr] + 1; \
 					write_memory(addr,tmp); \
 					sign_flag = memory[addr] & 0x80; \
 					zero_flag = !(memory[addr]); \
@@ -538,7 +538,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define INCR_MEM_ZPIX(CYCLES)	{ addr = memory[program_counter] + x_reg; \
-					tmp = memory_read(addr) + 1; \
+					tmp = memory[addr] + 1; \
 					write_memory(addr,tmp); \
 					sign_flag = memory[addr] & 0x80; \
 					zero_flag = !(memory[addr]); \
@@ -547,7 +547,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define INCR_MEM_A(CYCLES)	{ addr = (memory[program_counter+1] << 8) | memory[program_counter]; \
-					tmp = memory_read(addr) + 1; \
+					tmp = memory[addr] + 1; \
 					write_memory(addr,tmp); \
 					sign_flag = memory[addr] & 0x80; \
 					zero_flag = !(memory[addr]); \
@@ -556,7 +556,7 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define INCR_MEM_AIX(CYCLES)	{ addr = ((memory[program_counter+1] << 8) | memory[program_counter]) + x_reg; \
-					tmp = memory_read(addr) + 1; \
+					tmp = memory[addr] + 1; \
 					write_memory(addr,tmp); \
 					sign_flag = memory[addr] & 0x80; \
 					zero_flag = !(memory[addr]); \
@@ -576,9 +576,9 @@ void SET_SR(unsigned char b);
 					break; }
 
 #define JMP_AI(CYCLES)		{ tmp = (memory[program_counter+1] << 8) | memory[program_counter]; \
-					tmp2 = memory_read(tmp); \
+					tmp2 = memory[tmp]; \
 					tmp = ((memory[program_counter+1] << 8) | memory[program_counter]) + 1; \
-					addr = memory_read(tmp); \
+					addr = memory[tmp]; \
 					program_counter = (addr << 8) | tmp2; \
 					cycle_count -= CYCLES; \
 					break; }
