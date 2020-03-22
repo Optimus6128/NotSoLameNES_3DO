@@ -1,6 +1,8 @@
 ./lamenes.tns
-lamenes
+BannerScreen
+Launchme
 *.o
+*.iso
 *.tns
 *.nes
 *.zip
