@@ -82,7 +82,7 @@ int frameskipNum = 0;
 bool skipRendering = false;
 bool skipCPU = false;
 
-int renderer = RENDERER_PER_LINE;
+int renderer = RENDERER_PER_TILE;
 
 
 static void initNESscreenCELs()
